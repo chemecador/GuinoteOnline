@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -208,9 +210,55 @@ fun ShowPartnerCards(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun ShowCenterDeck(modifier: Modifier = Modifier, numCardsInDeck: Int) {
+
+    if (numCardsInDeck == 0) return
+    val configuration = LocalConfiguration.current
+    val cardWidth = (configuration.screenWidthDp / 8).dp
+
+    val triunfoCard = remember { cards.random() }
+
+    Box(
+        modifier = modifier
+            .wrapContentSize(align = Alignment.Center)
+    ) {
+        Image(
+            painter = painterResource(id = triunfoCard),
+            contentDescription = "Triunfo",
+            modifier = Modifier
+                .width(cardWidth)
+                .aspectRatio(0.75f)
+                .rotate(90f)
+                .align(Alignment.Center)
+                .offset(y = -(cardWidth / 2))
+        )
+
+        for (i in (numCardsInDeck - 1) downTo 0) {
+            Image(
+                painter = painterResource(id = R.drawable.back),
+                contentDescription = "Deck",
+                modifier = Modifier
+                    .width(cardWidth)
+                    .aspectRatio(0.75f)
+                    .align(Alignment.Center)
+                    .offset(
+                        x = -(i * 4).dp,
+                        y = -(i * 4).dp
+                    )
+            )
+        }
+    }
+}
+
+
+
 
 @Composable
 fun MainScreen() {
+
+    val numCardsInDeck = remember { mutableIntStateOf(4) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -240,6 +288,11 @@ fun MainScreen() {
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(start = 16.dp)
+        )
+
+        ShowCenterDeck(
+            modifier = Modifier.align(Alignment.Center),
+            numCardsInDeck = numCardsInDeck.intValue
         )
     }
 }
