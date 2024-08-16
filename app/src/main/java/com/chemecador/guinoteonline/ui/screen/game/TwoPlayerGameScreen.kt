@@ -2,6 +2,7 @@ package com.chemecador.guinoteonline.ui.screen.game
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -70,61 +74,33 @@ private val cards = listOf(
 )
 
 @Composable
-fun ShowPlayerCards(modifier: Modifier = Modifier) {
+fun ShowPlayerCards(
+    modifier: Modifier = Modifier,
+    onCardPlayed: (Int) -> Unit
+) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val cardWidth = (screenWidth * 2 / 13).dp
 
-    val selectedCards = remember { cards.shuffled().take(6) }
+    var selectedCards by remember { mutableStateOf(cards.shuffled().take(6)) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(all = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        selectedCards.forEach { cardResId ->
+        selectedCards.forEachIndexed { index, cardResId ->
             Image(
                 painter = painterResource(id = cardResId),
-                contentDescription = "Random card",
+                contentDescription = "Player card",
                 modifier = Modifier
                     .width(cardWidth)
                     .aspectRatio(0.75f)
-            )
-        }
-    }
-}
-
-@Composable
-fun ShowPartnerCards(modifier: Modifier = Modifier) {
-    val cardWidth = 60.dp
-
-    val rotations = listOf(45f, 20f, 5f, -5f, -20f, -45f)
-    val offsets = listOf(
-        (-24).dp,
-        (-16).dp,
-        (-8).dp,
-        8.dp,
-        16.dp,
-        24.dp
-    )
-
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentSize(align = Alignment.Center)
-    ) {
-        repeat(6) { index ->
-            Image(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Opponent's card",
-                modifier = Modifier
-                    .height(cardWidth)
-                    .aspectRatio(0.75f)
-                    .rotate(rotations[index])
-                    .offset(x = offsets[index])
-
+                    .clickable {
+                        onCardPlayed(cardResId)
+                        selectedCards = selectedCards.filterIndexed { i, _ -> i != index }
+                    }
             )
         }
     }
@@ -173,8 +149,9 @@ fun ShowCenterDeck(modifier: Modifier = Modifier, numCardsInDeck: Int) {
 
 @Composable
 fun MainScreen() {
-
     val numCardsInDeck = remember { mutableIntStateOf(4) }
+    var playedCard by remember { mutableStateOf<Int?>(null) }
+    var opponentPlayedCard by remember { mutableStateOf<Int?>(null) }
 
     Box(
         modifier = Modifier
@@ -182,23 +159,86 @@ fun MainScreen() {
             .background(color = Color(0xFF0B6623))
             .padding(top = 16.dp)
     ) {
-
-        ShowPartnerCards(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
-
         ShowPlayerCards(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 16.dp),
+            onCardPlayed = { cardResId ->
+                playedCard = cardResId
+            }
         )
 
         ShowCenterDeck(
             modifier = Modifier.align(Alignment.Center),
             numCardsInDeck = numCardsInDeck.intValue
         )
+
+        ShowOpponentDeck(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+                .clickable {
+                    opponentPlayedCard = cards.random()
+                }
+        )
+
+        playedCard?.let { card ->
+            Image(
+                painter = painterResource(id = card),
+                contentDescription = "Played card",
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (LocalConfiguration.current.screenHeightDp * 0.6f).dp)
+                    .width(80.dp)
+                    .aspectRatio(0.75f)
+            )
+        }
+
+        opponentPlayedCard?.let { card ->
+            Image(
+                painter = painterResource(id = card),
+                contentDescription = "Opponent's played card",
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (LocalConfiguration.current.screenHeightDp * 0.2f).dp)
+                    .width(80.dp)
+                    .aspectRatio(0.75f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ShowOpponentDeck(modifier: Modifier = Modifier) {
+    val cardWidth = 60.dp
+
+    val rotations = listOf(45f, 20f, 5f, -5f, -20f, -45f)
+    val offsets = listOf(
+        (-24).dp,
+        (-16).dp,
+        (-8).dp,
+        8.dp,
+        16.dp,
+        24.dp
+    )
+
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentSize(align = Alignment.Center)
+    ) {
+        repeat(6) { index ->
+            Image(
+                painter = painterResource(id = R.drawable.back),
+                contentDescription = "Opponent's deck",
+                modifier = Modifier
+                    .height(cardWidth)
+                    .aspectRatio(0.75f)
+                    .rotate(rotations[index])
+                    .offset(x = offsets[index])
+            )
+        }
     }
 }
 
