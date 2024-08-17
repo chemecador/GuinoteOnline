@@ -1,5 +1,6 @@
 package com.chemecador.guinoteonline.ui.screen.game
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,8 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chemecador.guinoteonline.R
 
@@ -244,12 +246,10 @@ fun ShowOpponentDeck(modifier: Modifier = Modifier) {
 
 
 @Composable
-fun TwoPlayerGameScreen() {
+fun TwoPlayerGameScreen(userId1: String, userId2: String) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        Toast.makeText(context, "$userId1 vs $userId2", Toast.LENGTH_LONG).show()
+    }
     MainScreen()
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewMainScreen() {
-    TwoPlayerGameScreen()
 }
