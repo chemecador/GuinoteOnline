@@ -3,6 +3,7 @@ package com.chemecador.guinoteonline.ui.screen.game.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -16,8 +17,8 @@ class SearchGameViewModel @Inject constructor() : ViewModel() {
     private val _gameStatus = MutableLiveData<String>()
     val gameStatus: LiveData<String> get() = _gameStatus
 
-    private val _startGameEvent = MutableLiveData<Pair<String, String>>()
-    val startGameEvent: LiveData<Pair<String, String>> get() = _startGameEvent
+    private val _startGameEvent = MutableLiveData<GameStartResponse>()
+    val startGameEvent: LiveData<GameStartResponse> get() = _startGameEvent
 
     private val socket: Socket
 
@@ -42,9 +43,20 @@ class SearchGameViewModel @Inject constructor() : ViewModel() {
         socket.on("game_start") { args ->
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                val userId1 = data.optString("userId1", "Jugador 1")
-                val userId2 = data.optString("userId2", "Jugador 2")
-                _startGameEvent.postValue(userId1 to userId2)
+
+                val gameStartResponse = GameStartResponse(
+                    message = data.optString("message"),
+                    gameId = data.optString("gameId"),
+                    userId1 = data.optString("userId1"),
+                    userId2 = data.optString("userId2"),
+                    playerCards = data.getJSONArray("playerCards").let { jsonArray ->
+                        List(jsonArray.length()) { jsonArray.getString(it) }
+                    },
+                    triunfoCard = data.optString("triunfoCard")
+                )
+                Timber.tag("GameStart").i(gameStartResponse.toString())
+
+                _startGameEvent.postValue(gameStartResponse)
             }
         }
 
@@ -64,5 +76,3 @@ class SearchGameViewModel @Inject constructor() : ViewModel() {
         socket.disconnect()
     }
 }
-
-

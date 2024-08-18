@@ -18,21 +18,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import com.chemecador.guinoteonline.ui.screen.game.viewmodel.SearchGameViewModel
 import java.util.UUID
 
 @Composable
 fun SearchGameScreen(
     viewModel: SearchGameViewModel = hiltViewModel(),
-    onGameStart: (String, String) -> Unit
+    onGameStart: (GameStartResponse) -> Unit
 ) {
     val gameStatus by viewModel.gameStatus.observeAsState("")
     val context = LocalContext.current
     val startGameEvent by viewModel.startGameEvent.observeAsState()
 
-    startGameEvent?.let { (userId1, userId2) ->
-        Toast.makeText(context, "$userId1 vs $userId2", Toast.LENGTH_LONG).show()
-        onGameStart(userId1, userId2)
+    startGameEvent?.let { gameStartResponse ->
+        Toast.makeText(
+            context,
+            "${gameStartResponse.userId1} vs ${gameStartResponse.userId2}",
+            Toast.LENGTH_LONG
+        ).show()
+        onGameStart(gameStartResponse)
     }
 
     Column(

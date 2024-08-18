@@ -17,11 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -31,60 +26,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.chemecador.guinoteonline.R
-
-private val cards = listOf(
-    R.drawable.bastos1,
-    R.drawable.bastos2,
-    R.drawable.bastos3,
-    R.drawable.bastos4,
-    R.drawable.bastos5,
-    R.drawable.bastos6,
-    R.drawable.bastos7,
-    R.drawable.bastos10,
-    R.drawable.bastos11,
-    R.drawable.bastos12,
-    R.drawable.copas1,
-    R.drawable.copas2,
-    R.drawable.copas3,
-    R.drawable.copas4,
-    R.drawable.copas5,
-    R.drawable.copas6,
-    R.drawable.copas7,
-    R.drawable.copas10,
-    R.drawable.copas11,
-    R.drawable.copas12,
-    R.drawable.espadas1,
-    R.drawable.espadas2,
-    R.drawable.espadas3,
-    R.drawable.espadas4,
-    R.drawable.espadas5,
-    R.drawable.espadas6,
-    R.drawable.espadas7,
-    R.drawable.espadas10,
-    R.drawable.espadas11,
-    R.drawable.espadas12,
-    R.drawable.oros1,
-    R.drawable.oros2,
-    R.drawable.oros3,
-    R.drawable.oros4,
-    R.drawable.oros5,
-    R.drawable.oros6,
-    R.drawable.oros7,
-    R.drawable.oros10,
-    R.drawable.oros11,
-    R.drawable.oros12
-)
+import com.chemecador.guinoteonline.data.network.response.GameStartResponse
+import com.chemecador.guinoteonline.utils.mappers.CardResourceMapper
 
 @Composable
 fun ShowPlayerCards(
     modifier: Modifier = Modifier,
-    onCardPlayed: (Int) -> Unit
+    playerCards: List<String>,
+    onCardPlayed: (String) -> Unit,
+    cardResourceMapper: CardResourceMapper = CardResourceMapper()
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val cardWidth = (screenWidth * 2 / 13).dp
-
-    var selectedCards by remember { mutableStateOf(cards.shuffled().take(6)) }
 
     Row(
         modifier = modifier
@@ -92,37 +46,40 @@ fun ShowPlayerCards(
             .padding(all = 4.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        selectedCards.forEachIndexed { index, cardResId ->
+        playerCards.forEachIndexed { index, cardResId ->
             Image(
-                painter = painterResource(id = cardResId),
+                painter = painterResource(id = cardResourceMapper.getCardResourceId(cardResId)),
                 contentDescription = "Player card",
                 modifier = Modifier
                     .width(cardWidth)
                     .aspectRatio(0.75f)
                     .clickable {
                         onCardPlayed(cardResId)
-                        selectedCards = selectedCards.filterIndexed { i, _ -> i != index }
                     }
             )
         }
     }
 }
 
+
 @Composable
-fun ShowCenterDeck(modifier: Modifier = Modifier, numCardsInDeck: Int) {
+fun ShowCenterDeck(
+    modifier: Modifier = Modifier,
+    numCardsInDeck: Int,
+    triunfoCard: String,
+    cardResourceMapper: CardResourceMapper = CardResourceMapper()
+) {
 
     if (numCardsInDeck == 0) return
     val configuration = LocalConfiguration.current
     val cardWidth = (configuration.screenWidthDp / 8).dp
-
-    val triunfoCard = remember { cards.random() }
 
     Box(
         modifier = modifier
             .wrapContentSize(align = Alignment.Center)
     ) {
         Image(
-            painter = painterResource(id = triunfoCard),
+            painter = painterResource(id = cardResourceMapper.getCardResourceId(triunfoCard)),
             contentDescription = "Triunfo",
             modifier = Modifier
                 .width(cardWidth)
@@ -149,11 +106,10 @@ fun ShowCenterDeck(modifier: Modifier = Modifier, numCardsInDeck: Int) {
     }
 }
 
+
 @Composable
-fun MainScreen() {
-    val numCardsInDeck = remember { mutableIntStateOf(4) }
-    var playedCard by remember { mutableStateOf<Int?>(null) }
-    var opponentPlayedCard by remember { mutableStateOf<Int?>(null) }
+fun MainScreen(gameStartResponse: GameStartResponse) {
+    val cardResourceMapper = CardResourceMapper()
 
     Box(
         modifier = Modifier
@@ -165,50 +121,42 @@ fun MainScreen() {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp),
-            onCardPlayed = { cardResId ->
-                playedCard = cardResId
-            }
+            playerCards = gameStartResponse.playerCards,
+            onCardPlayed = { cardPlayed ->
+                // TODO
+            },
+            cardResourceMapper = cardResourceMapper
         )
 
         ShowCenterDeck(
             modifier = Modifier.align(Alignment.Center),
-            numCardsInDeck = numCardsInDeck.intValue
+            numCardsInDeck = 4,
+            triunfoCard = gameStartResponse.triunfoCard,
+            cardResourceMapper = cardResourceMapper
         )
 
         ShowOpponentDeck(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp)
-                .clickable {
-                    opponentPlayedCard = cards.random()
-                }
         )
-
-        playedCard?.let { card ->
-            Image(
-                painter = painterResource(id = card),
-                contentDescription = "Played card",
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (LocalConfiguration.current.screenHeightDp * 0.6f).dp)
-                    .width(80.dp)
-                    .aspectRatio(0.75f)
-            )
-        }
-
-        opponentPlayedCard?.let { card ->
-            Image(
-                painter = painterResource(id = card),
-                contentDescription = "Opponent's played card",
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (LocalConfiguration.current.screenHeightDp * 0.2f).dp)
-                    .width(80.dp)
-                    .aspectRatio(0.75f)
-            )
-        }
     }
 }
+
+
+@Composable
+fun TwoPlayerGameScreen(gameStartResponse: GameStartResponse) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) {
+        Toast.makeText(
+            context,
+            "${gameStartResponse.userId1} vs ${gameStartResponse.userId2}",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+    MainScreen(gameStartResponse = gameStartResponse)
+}
+
 
 @Composable
 fun ShowOpponentDeck(modifier: Modifier = Modifier) {
@@ -242,14 +190,4 @@ fun ShowOpponentDeck(modifier: Modifier = Modifier) {
             )
         }
     }
-}
-
-
-@Composable
-fun TwoPlayerGameScreen(userId1: String, userId2: String) {
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        Toast.makeText(context, "$userId1 vs $userId2", Toast.LENGTH_LONG).show()
-    }
-    MainScreen()
 }

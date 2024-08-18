@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
 import com.chemecador.guinoteonline.ui.screen.game.TwoPlayerGameScreen
 import com.chemecador.guinoteonline.ui.theme.GuinoteOnlineTheme
@@ -15,25 +16,21 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             GuinoteOnlineTheme {
-                var isGameStarted by remember { mutableStateOf(false) }
-                var userId1 by remember { mutableStateOf("") }
-                var userId2 by remember { mutableStateOf("") }
+                var gameStartResponse by remember { mutableStateOf<GameStartResponse?>(null) }
 
-                if (isGameStarted) {
-                    TwoPlayerGameScreen(userId1 = userId1, userId2 = userId2)
+                if (gameStartResponse != null) {
+                    TwoPlayerGameScreen(gameStartResponse = gameStartResponse!!)
                 } else {
-                    SearchGameScreen { id1, id2 ->
-                        userId1 = id1
-                        userId2 = id2
-                        isGameStarted = true
+                    SearchGameScreen { response ->
+                        gameStartResponse = response
                     }
                 }
             }
         }
     }
 }
+
