@@ -1,8 +1,38 @@
-package com.chemecador.guinoteonline.utils.mappers
+package com.chemecador.guinoteonline.data.model
 
 import com.chemecador.guinoteonline.R
 
-class CardResourceMapper {
+data class Card(val palo: String, val numero: Int, val img: Int)
+
+object CardUtils {
+
+    private val paloPriority = mapOf(
+        "oros" to 1,
+        "copas" to 2,
+        "espadas" to 3,
+        "bastos" to 4
+    )
+
+    private val valuePriority = mapOf(
+        1 to 1,
+        3 to 2,
+        12 to 3,
+        10 to 4,
+        11 to 5,
+        7 to 6,
+        6 to 7,
+        5 to 8,
+        4 to 9,
+        2 to 10
+    )
+
+    private val valueMap = mapOf(
+        "1" to 11,
+        "3" to 10,
+        "12" to 4,
+        "10" to 3,
+        "11" to 2
+    )
 
     private val cardResourceMap = mapOf(
         // Bastos
@@ -54,7 +84,27 @@ class CardResourceMapper {
         "oros12" to R.drawable.oros12
     )
 
-    fun getCardResourceId(cardName: String): Int {
+    fun sortPlayerCards(cards: List<Card>, triunfoPalo: String): List<Card> {
+        return cards.sortedWith(compareBy(
+            { if (it.palo == triunfoPalo) 0 else paloPriority[it.palo] ?: 5 },
+            { valuePriority[it.numero] ?: 11 }
+        ))
+    }
+
+    fun getValue(card: String): Int {
+        val value = card.filter { it.isDigit() }
+        return valueMap[value] ?: 0
+    }
+
+    private fun getCardResourceId(cardName: String): Int {
         return cardResourceMap[cardName] ?: R.drawable.back
+    }
+
+    fun stringToCard(cardString: String): Card {
+        if (cardString.isBlank()) return Card("", 0, 0)
+        val palo = cardString.filter { it.isLetter() }
+        val numero = cardString.filter { it.isDigit() }.toInt()
+        val img = getCardResourceId(cardString)
+        return Card(palo, numero, img)
     }
 }

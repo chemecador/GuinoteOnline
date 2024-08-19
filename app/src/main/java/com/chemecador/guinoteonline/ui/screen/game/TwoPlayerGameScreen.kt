@@ -26,16 +26,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.chemecador.guinoteonline.R
+import com.chemecador.guinoteonline.data.model.Card
+import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
-import com.chemecador.guinoteonline.utils.mappers.CardResourceMapper
 
 @Composable
 fun ShowPlayerCards(
     modifier: Modifier = Modifier,
-    playerCards: List<String>,
-    onCardPlayed: (String) -> Unit,
-    cardResourceMapper: CardResourceMapper = CardResourceMapper()
+    playerCards: List<Card>,
+    triunfoCard: Card,
+    onCardPlayed: (Card) -> Unit
 ) {
+    val sortedCards = CardUtils.sortPlayerCards(playerCards, triunfoCard.palo)
+
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val cardWidth = (screenWidth * 2 / 13).dp
@@ -46,15 +49,15 @@ fun ShowPlayerCards(
             .padding(all = 4.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        playerCards.forEachIndexed { index, cardResId ->
+        sortedCards.forEach { card ->
             Image(
-                painter = painterResource(id = cardResourceMapper.getCardResourceId(cardResId)),
+                painter = painterResource(id = card.img),
                 contentDescription = "Player card",
                 modifier = Modifier
                     .width(cardWidth)
                     .aspectRatio(0.75f)
                     .clickable {
-                        onCardPlayed(cardResId)
+                        onCardPlayed(card)
                     }
             )
         }
@@ -66,10 +69,8 @@ fun ShowPlayerCards(
 fun ShowCenterDeck(
     modifier: Modifier = Modifier,
     numCardsInDeck: Int,
-    triunfoCard: String,
-    cardResourceMapper: CardResourceMapper = CardResourceMapper()
+    triunfoCard: Card
 ) {
-
     if (numCardsInDeck == 0) return
     val configuration = LocalConfiguration.current
     val cardWidth = (configuration.screenWidthDp / 8).dp
@@ -79,7 +80,7 @@ fun ShowCenterDeck(
             .wrapContentSize(align = Alignment.Center)
     ) {
         Image(
-            painter = painterResource(id = cardResourceMapper.getCardResourceId(triunfoCard)),
+            painter = painterResource(id = triunfoCard.img),
             contentDescription = "Triunfo",
             modifier = Modifier
                 .width(cardWidth)
@@ -109,7 +110,6 @@ fun ShowCenterDeck(
 
 @Composable
 fun MainScreen(gameStartResponse: GameStartResponse) {
-    val cardResourceMapper = CardResourceMapper()
 
     Box(
         modifier = Modifier
@@ -122,17 +122,16 @@ fun MainScreen(gameStartResponse: GameStartResponse) {
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp),
             playerCards = gameStartResponse.playerCards,
+            triunfoCard = gameStartResponse.triunfoCard,
             onCardPlayed = { cardPlayed ->
                 // TODO
-            },
-            cardResourceMapper = cardResourceMapper
+            }
         )
 
         ShowCenterDeck(
             modifier = Modifier.align(Alignment.Center),
             numCardsInDeck = 4,
-            triunfoCard = gameStartResponse.triunfoCard,
-            cardResourceMapper = cardResourceMapper
+            triunfoCard = gameStartResponse.triunfoCard
         )
 
         ShowOpponentDeck(

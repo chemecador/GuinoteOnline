@@ -3,6 +3,7 @@ package com.chemecador.guinoteonline.ui.screen.game.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
@@ -44,15 +45,16 @@ class SearchGameViewModel @Inject constructor() : ViewModel() {
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
 
+
                 val gameStartResponse = GameStartResponse(
                     message = data.optString("message"),
                     gameId = data.optString("gameId"),
                     userId1 = data.optString("userId1"),
                     userId2 = data.optString("userId2"),
                     playerCards = data.getJSONArray("playerCards").let { jsonArray ->
-                        List(jsonArray.length()) { jsonArray.getString(it) }
+                        List(jsonArray.length()) { CardUtils.stringToCard(jsonArray.getString(it)) }
                     },
-                    triunfoCard = data.optString("triunfoCard")
+                    triunfoCard = CardUtils.stringToCard(data.optString("triunfoCard"))
                 )
                 Timber.tag("GameStart").i(gameStartResponse.toString())
 
