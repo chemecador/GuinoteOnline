@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
-import com.chemecador.guinoteonline.ui.screen.game.viewmodel.SearchGameViewModel
+import com.chemecador.guinoteonline.ui.viewmodel.game.SearchGameViewModel
 import java.util.UUID
 
 @Composable

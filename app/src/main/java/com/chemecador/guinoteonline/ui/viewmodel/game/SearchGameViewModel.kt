@@ -1,4 +1,4 @@
-package com.chemecador.guinoteonline.ui.screen.game.viewmodel
+package com.chemecador.guinoteonline.ui.viewmodel.game
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
