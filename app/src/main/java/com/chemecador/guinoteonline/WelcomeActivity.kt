@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.chemecador.guinoteonline.ui.viewmodel.auth.AuthViewModel
 import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
+import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.theme.GuinoteOnlineTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -99,7 +101,7 @@ class WelcomeActivity : ComponentActivity() {
     @Composable
     fun WelcomeScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(BackgroundColor),
             contentAlignment = Alignment.Center
         ) {
             Column(

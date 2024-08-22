@@ -29,6 +29,7 @@ import com.chemecador.guinoteonline.R
 import com.chemecador.guinoteonline.data.model.Card
 import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
+import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 
 @Composable
 fun ShowPlayerCards(
@@ -114,7 +115,7 @@ fun MainScreen(gameStartResponse: GameStartResponse) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color(0xFF0B6623))
+            .background(color = BackgroundColor)
             .padding(top = 16.dp)
     ) {
         ShowPlayerCards(
