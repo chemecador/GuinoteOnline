@@ -56,12 +56,13 @@ fun RegisterScreen(
     val emailError by viewModel.emailError.observeAsState(false)
     val passwordError by viewModel.passwordError.observeAsState(null)
 
-    val isButtonEnabled = remember(username, email, password, confirmPassword, emailError, passwordError) {
-        username.isNotBlank() && viewModel.isValidEmail(email) && viewModel.isValidPassword(
-            password,
-            confirmPassword
-        ) && !emailError && passwordError == null
-    }
+    val isButtonEnabled =
+        remember(username, email, password, confirmPassword, emailError, passwordError) {
+            username.isNotBlank() && viewModel.isValidEmail(email) && viewModel.isValidPassword(
+                password,
+                confirmPassword
+            ) && !emailError && passwordError == null
+        }
 
     Column(
         modifier = Modifier
@@ -182,6 +183,7 @@ fun UsernameTextField(username: String, onValueChange: (String) -> Unit) {
         onValueChange = onValueChange,
         label = { Text("Username") },
         modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.White,
             unfocusedBorderColor = Color.Gray,
@@ -208,6 +210,7 @@ fun EmailTextField(
         onValueChange = onValueChange,
         label = { Text("Email") },
         isError = emailError,
+        singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
             .onFocusChanged { focusState ->
@@ -248,6 +251,7 @@ fun PasswordTextField(
 
     OutlinedTextField(
         value = value,
+        singleLine = true,
         onValueChange = onValueChange,
         label = { Text(label) },
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),

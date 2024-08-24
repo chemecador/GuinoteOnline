@@ -4,8 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chemecador.guinoteonline.data.network.services.AuthService
-import com.chemecador.guinoteonline.data.network.services.RegisterRequest
+import com.chemecador.guinoteonline.data.network.request.auth.RegisterRequest
+import com.chemecador.guinoteonline.data.repositories.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -13,7 +13,7 @@ import kotlin.math.abs
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val authService: AuthService
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _registerState = MutableLiveData<RegisterState>()
@@ -32,7 +32,9 @@ class RegisterViewModel @Inject constructor(
 
     fun onPasswordChange(password: String, confirmPassword: String) {
         when {
-            password.length < 6 -> _passwordError.value = "La contraseña debe tener al menos 6 caracteres"
+            password.length < 6 -> _passwordError.value =
+                "La contraseña debe tener al menos 6 caracteres"
+
             password != confirmPassword -> {
                 val lengthDifference = abs(password.length - confirmPassword.length)
                 if (lengthDifference <= 3) {
@@ -41,6 +43,7 @@ class RegisterViewModel @Inject constructor(
                     _passwordError.value = null
                 }
             }
+
             else -> _passwordError.value = null
         }
     }
@@ -62,15 +65,13 @@ class RegisterViewModel @Inject constructor(
         _registerState.value = RegisterState.Loading
 
         viewModelScope.launch {
-            try {
-                val response = authService.register(RegisterRequest(username, email, password))
-                if (response.isSuccessful) {
-                    _registerState.value = RegisterState.Success
-                } else {
-                    _registerState.value = RegisterState.Error(response.message())
-                }
-            } catch (e: Exception) {
-                _registerState.value = RegisterState.Error(e.message ?: "Unknown error")
+            _registerState.value = RegisterState.Loading
+
+            val result = authRepository.register(RegisterRequest( username, email, password))
+            result.onSuccess { token ->
+                _registerState.value = RegisterState.Success(token)
+            }.onFailure { error ->
+                _registerState.value = RegisterState.Error(error.message ?: "Unknown error")
             }
         }
     }

@@ -42,7 +42,7 @@ import com.chemecador.guinoteonline.ui.viewmodel.auth.register.RegisterState
 import com.chemecador.guinoteonline.ui.viewmodel.auth.register.RegisterViewModel
 
 @Composable
-fun RegisterScreen(
+fun LoginScreen(
     viewModel: RegisterViewModel = hiltViewModel(),
     onRegisterSuccess: (String) -> Unit
 ) {
