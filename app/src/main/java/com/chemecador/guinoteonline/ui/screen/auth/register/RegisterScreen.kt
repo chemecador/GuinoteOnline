@@ -54,13 +54,13 @@ fun RegisterScreen(
     val context = LocalContext.current
     val registerState by viewModel.registerState.observeAsState()
     val emailError by viewModel.emailError.observeAsState(false)
-    val passwordError by viewModel.passwordMismatchError.observeAsState(false)
+    val passwordError by viewModel.passwordError.observeAsState(null)
 
-    val isButtonEnabled = remember(username, email, password, confirmPassword, emailError) {
+    val isButtonEnabled = remember(username, email, password, confirmPassword, emailError, passwordError) {
         username.isNotBlank() && viewModel.isValidEmail(email) && viewModel.isValidPassword(
             password,
             confirmPassword
-        )
+        ) && !emailError && passwordError == null
     }
 
     Column(
@@ -112,7 +112,12 @@ fun RegisterScreen(
             },
             label = "Password",
             modifier = Modifier.fillMaxWidth(),
-            isError = passwordError
+            isError = passwordError != null,
+            supportingText = {
+                passwordError?.let {
+                    Text(it, color = Color.Red)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -123,7 +128,12 @@ fun RegisterScreen(
             label = "Confirm Password",
             onFocusChange = { viewModel.onPasswordFocusChange(password, confirmPassword) },
             modifier = Modifier.fillMaxWidth(),
-            isError = passwordError
+            isError = passwordError != null,
+            supportingText = {
+                passwordError?.let {
+                    Text(it, color = Color.Red)
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -163,6 +173,7 @@ fun RegisterScreen(
         }
     }
 }
+
 
 @Composable
 fun UsernameTextField(username: String, onValueChange: (String) -> Unit) {
@@ -275,4 +286,3 @@ fun PasswordTextField(
         supportingText = supportingText
     )
 }
-

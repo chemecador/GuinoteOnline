@@ -22,9 +22,8 @@ class RegisterViewModel @Inject constructor(
     private val _emailError = MutableLiveData<Boolean>()
     val emailError: LiveData<Boolean> get() = _emailError
 
-    private val _passwordMismatchError = MutableLiveData<Boolean>()
-    val passwordMismatchError: LiveData<Boolean> get() = _passwordMismatchError
-
+    private val _passwordError = MutableLiveData<String?>()
+    val passwordError: LiveData<String?> get() = _passwordError
 
     fun onEmailFocusChange(email: String) {
         if (email.isNotEmpty())
@@ -32,14 +31,24 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun onPasswordChange(password: String, confirmPassword: String) {
-        val lengthDifference = abs(password.length - confirmPassword.length)
-
-        _passwordMismatchError.value = lengthDifference <= 3 && password != confirmPassword
+        when {
+            password.length < 6 -> _passwordError.value = "La contraseña debe tener al menos 6 caracteres"
+            password != confirmPassword -> {
+                val lengthDifference = abs(password.length - confirmPassword.length)
+                if (lengthDifference <= 3) {
+                    _passwordError.value = "Las contraseñas no coinciden"
+                } else {
+                    _passwordError.value = null
+                }
+            }
+            else -> _passwordError.value = null
+        }
     }
 
     fun onPasswordFocusChange(password: String, confirmPassword: String) {
-        if (confirmPassword.isBlank()) return
-        _passwordMismatchError.value = password != confirmPassword
+        if (password.isNotBlank() && confirmPassword.isNotBlank() && password != confirmPassword) {
+            _passwordError.value = "Las contraseñas no coinciden"
+        }
     }
 
     fun isValidEmail(email: String): Boolean {
@@ -66,6 +75,7 @@ class RegisterViewModel @Inject constructor(
         }
     }
 
-    fun isValidPassword(password: String, confirmPassword: String) =
-        password == confirmPassword && password.length > 4
+    fun isValidPassword(password: String, confirmPassword: String): Boolean {
+        return password == confirmPassword && password.length >= 6
+    }
 }
