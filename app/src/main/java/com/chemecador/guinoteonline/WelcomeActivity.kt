@@ -25,13 +25,13 @@ import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.theme.GuinoteOnlineTheme
-import com.chemecador.guinoteonline.ui.viewmodel.auth.AuthViewModel
+import com.chemecador.guinoteonline.ui.viewmodel.auth.WelcomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class WelcomeActivity : ComponentActivity() {
 
-    private val viewModel: AuthViewModel by viewModels()
+    private val viewModel: WelcomeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
