@@ -1,6 +1,6 @@
 package com.chemecador.guinoteonline.di
 
-import com.chemecador.guinoteonline.data.network.services.ApiService
+import com.chemecador.guinoteonline.data.network.services.AuthService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,7 +38,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
+    fun provideApiService(retrofit: Retrofit): AuthService {
+        return retrofit.create(AuthService::class.java)
     }
 }
