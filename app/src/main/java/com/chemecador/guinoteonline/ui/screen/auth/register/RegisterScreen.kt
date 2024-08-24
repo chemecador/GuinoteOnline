@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -26,10 +28,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.R
@@ -46,8 +50,18 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
     val context = LocalContext.current
     val registerState by viewModel.registerState.observeAsState()
+    val emailError by viewModel.emailError.observeAsState(false)
+    val passwordError by viewModel.passwordMismatchError.observeAsState(false)
+
+    val isButtonEnabled = remember(username, email, password, confirmPassword, emailError) {
+        username.isNotBlank() && viewModel.isValidEmail(email) && viewModel.isValidPassword(
+            password,
+            confirmPassword
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -72,98 +86,66 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                focusedTextColor = Color.White,
-                cursorColor = Color.White,
-                focusedLabelColor = Color.White,
-                unfocusedLabelColor = Color.Gray
-            )
-        )
+        UsernameTextField(username = username, onValueChange = { username = it })
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = email,
+        EmailTextField(
+            email = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                unfocusedTextColor = Color.White,
-                focusedTextColor = Color.White,
-                cursorColor = Color.White,
-                focusedLabelColor = Color.White,
-                unfocusedLabelColor = Color.Gray
-            )
+            emailError = emailError,
+            onFocusChange = { hasFocus ->
+                if (!hasFocus) {
+                    viewModel.onEmailFocusChange(email)
+                }
+            }
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
+        PasswordTextField(
             value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            onValueChange = {
+                password = it
+                viewModel.onPasswordChange(password, confirmPassword)
+            },
+            onFocusChange = {
+                viewModel.onPasswordFocusChange(password, confirmPassword)
+            },
+            label = "Password",
             modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                focusedTextColor = Color.White,
-                cursorColor = Color.White,
-                focusedLabelColor = Color.White,
-                unfocusedLabelColor = Color.Gray
-            )
+            isError = passwordError
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
+        PasswordTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
-            label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            label = "Confirm Password",
+            onFocusChange = { viewModel.onPasswordFocusChange(password, confirmPassword) },
             modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.White,
-                unfocusedBorderColor = Color.Gray,
-                focusedTextColor = Color.White,
-                cursorColor = Color.White,
-                focusedLabelColor = Color.White,
-                unfocusedLabelColor = Color.Gray
-            )
+            isError = passwordError
         )
-        Spacer(modifier = Modifier.height(24.dp))
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             onClick = {
                 if (password == confirmPassword) {
                     viewModel.register(username, email, password)
-                } else {
-                    Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                 }
             },
+            enabled = isButtonEnabled,
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White
+                containerColor = Color.White,
+                disabledContainerColor = Color.Gray
             )
         ) {
             Text("Register", color = Color.Black)
         }
 
         registerState?.let { state ->
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             when (state) {
                 is RegisterState.Success -> {
                     Toast.makeText(context, "Registered successfully", Toast.LENGTH_SHORT).show()
@@ -181,3 +163,116 @@ fun RegisterScreen(
         }
     }
 }
+
+@Composable
+fun UsernameTextField(username: String, onValueChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = username,
+        onValueChange = onValueChange,
+        label = { Text("Username") },
+        modifier = Modifier.fillMaxWidth(),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color.White,
+            unfocusedBorderColor = Color.Gray,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White,
+            focusedLabelColor = Color.White,
+            unfocusedLabelColor = Color.Gray
+        )
+    )
+}
+
+@Composable
+fun EmailTextField(
+    email: String,
+    onValueChange: (String) -> Unit,
+    emailError: Boolean,
+    onFocusChange: (Boolean) -> Unit
+) {
+    var isFocused by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = email,
+        onValueChange = onValueChange,
+        label = { Text("Email") },
+        isError = emailError,
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { focusState ->
+                isFocused = focusState.isFocused
+                if (!focusState.isFocused) {
+                    onFocusChange(false)
+                }
+            },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = if (emailError) Color.Red else Color.White,
+            unfocusedBorderColor = if (emailError) Color.Red else Color.Gray,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White,
+            focusedLabelColor = if (emailError) Color.Red else Color.White,
+            unfocusedLabelColor = if (emailError) Color.Red else Color.Gray
+        ),
+        supportingText = {
+            if (emailError) {
+                Text(text = "Email no válido", color = Color.Red)
+            }
+        }
+    )
+}
+
+@Composable
+fun PasswordTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onFocusChange: (Boolean) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean,
+    supportingText: @Composable (() -> Unit)? = null
+) {
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        modifier = modifier.onFocusChanged { focusState ->
+            isFocused = focusState.isFocused
+            if (!focusState.isFocused) {
+                onFocusChange(false)
+            }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = if (isError) Color.Red else Color.White,
+            unfocusedBorderColor = if (isError) Color.Red else Color.Gray,
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White,
+            cursorColor = Color.White,
+            focusedLabelColor = if (isError) Color.Red else Color.White,
+            unfocusedLabelColor = if (isError) Color.Red else Color.Gray,
+        ),
+        trailingIcon = {
+            val image = if (passwordVisible) {
+                painterResource(id = R.drawable.ic_visibility_on)
+            } else {
+                painterResource(id = R.drawable.ic_visibility_off)
+            }
+
+            IconButton(onClick = {
+                passwordVisible = !passwordVisible
+            }) {
+                Icon(
+                    painter = image,
+                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                )
+            }
+        },
+        isError = isError,
+        supportingText = supportingText
+    )
+}
+

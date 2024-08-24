@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,12 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.chemecador.guinoteonline.ui.viewmodel.auth.AuthViewModel
 import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.theme.GuinoteOnlineTheme
+import com.chemecador.guinoteonline.ui.viewmodel.auth.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -101,7 +104,9 @@ class WelcomeActivity : ComponentActivity() {
     @Composable
     fun WelcomeScreen(onLoginClick: () -> Unit, onRegisterClick: () -> Unit) {
         Box(
-            modifier = Modifier.fillMaxSize().background(BackgroundColor),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundColor),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -110,8 +115,11 @@ class WelcomeActivity : ComponentActivity() {
             ) {
                 Text(
                     text = "Bienvenido a Guinote Online",
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White
                 )
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Button(onClick = onLoginClick) {
                     Text(text = "Iniciar Sesión")

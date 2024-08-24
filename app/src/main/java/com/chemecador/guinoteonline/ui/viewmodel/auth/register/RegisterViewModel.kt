@@ -9,6 +9,7 @@ import com.chemecador.guinoteonline.data.network.services.RegisterRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
@@ -16,9 +17,39 @@ class RegisterViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _registerState = MutableLiveData<RegisterState>()
-    val registerState: LiveData<RegisterState> = _registerState
+    val registerState: LiveData<RegisterState> get() = _registerState
+
+    private val _emailError = MutableLiveData<Boolean>()
+    val emailError: LiveData<Boolean> get() = _emailError
+
+    private val _passwordMismatchError = MutableLiveData<Boolean>()
+    val passwordMismatchError: LiveData<Boolean> get() = _passwordMismatchError
+
+
+    fun onEmailFocusChange(email: String) {
+        if (email.isNotEmpty())
+            _emailError.value = !isValidEmail(email)
+    }
+
+    fun onPasswordChange(password: String, confirmPassword: String) {
+        val lengthDifference = abs(password.length - confirmPassword.length)
+
+        _passwordMismatchError.value = lengthDifference <= 3 && password != confirmPassword
+    }
+
+    fun onPasswordFocusChange(password: String, confirmPassword: String) {
+        if (confirmPassword.isBlank()) return
+        _passwordMismatchError.value = password != confirmPassword
+    }
+
+    fun isValidEmail(email: String): Boolean {
+        val emailPattern = "[a-zA-Z0-9._-]+@[a-z]+\\.+[a-z]+"
+        return email.matches(emailPattern.toRegex())
+    }
 
     fun register(username: String, email: String, password: String) {
+        if (!isValidEmail(email)) return
+
         _registerState.value = RegisterState.Loading
 
         viewModelScope.launch {
@@ -34,4 +65,7 @@ class RegisterViewModel @Inject constructor(
             }
         }
     }
+
+    fun isValidPassword(password: String, confirmPassword: String) =
+        password == confirmPassword && password.length > 4
 }
