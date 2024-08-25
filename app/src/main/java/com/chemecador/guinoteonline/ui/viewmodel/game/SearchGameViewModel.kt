@@ -3,17 +3,22 @@ package com.chemecador.guinoteonline.ui.viewmodel.game
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
+import com.chemecador.guinoteonline.data.repositories.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
-class SearchGameViewModel @Inject constructor() : ViewModel() {
+class SearchGameViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _gameStatus = MutableLiveData<String>()
     val gameStatus: LiveData<String> get() = _gameStatus
@@ -76,5 +81,11 @@ class SearchGameViewModel @Inject constructor() : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         socket.disconnect()
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.clearAuthToken()
+        }
     }
 }

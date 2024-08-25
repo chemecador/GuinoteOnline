@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,7 +27,8 @@ import java.util.UUID
 @Composable
 fun SearchGameScreen(
     viewModel: SearchGameViewModel = hiltViewModel(),
-    onGameStart: (GameStartResponse) -> Unit
+    onGameStart: (GameStartResponse) -> Unit,
+    onLogout: () -> Unit
 ) {
     val gameStatus by viewModel.gameStatus.observeAsState("")
     val context = LocalContext.current
@@ -54,5 +57,20 @@ fun SearchGameScreen(
         Button(onClick = { viewModel.searchForGame(UUID.randomUUID().toString()) }) {
             Text(text = "Buscar Partida")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                viewModel.logout()
+                onLogout()
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Red
+            )
+        ) {
+            Text(text = "Cerrar sesión", color = Color.White)
+        }
     }
 }
+

@@ -1,5 +1,6 @@
 package com.chemecador.guinoteonline
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,7 +52,6 @@ class WelcomeActivity : ComponentActivity() {
                     authToken.isNullOrEmpty() -> {
                         RegisterScreen(
                             onRegisterSuccess = { token ->
-                                viewModel.saveAuthToken(token)
                                 navigateToMainScreen()
                             }
                         )
@@ -83,7 +83,6 @@ class WelcomeActivity : ComponentActivity() {
             GuinoteOnlineTheme {
                 RegisterScreen(
                     onRegisterSuccess = { token ->
-                        viewModel.saveAuthToken(token)
                         navigateToMainScreen()
                     }
                 )
@@ -94,9 +93,10 @@ class WelcomeActivity : ComponentActivity() {
     private fun navigateToMainScreen() {
         setContent {
             GuinoteOnlineTheme {
-                SearchGameScreen {
-                    // TODO: Handle game start
-                }
+                SearchGameScreen(
+                    onLogout = { navigateToWelcomeScreen() },
+                    onGameStart = {}
+                )
             }
         }
     }
@@ -130,5 +130,10 @@ class WelcomeActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun navigateToWelcomeScreen() {
+        startActivity(Intent(this, WelcomeActivity::class.java))
+        finish()
     }
 }
