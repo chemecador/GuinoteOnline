@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.chemecador.guinoteonline.ui.screen.auth.login.LoginScreen
 import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
@@ -51,9 +52,7 @@ class WelcomeActivity : ComponentActivity() {
 
                     authToken.isNullOrEmpty() -> {
                         RegisterScreen(
-                            onRegisterSuccess = { token ->
-                                navigateToMainScreen()
-                            }
+                            onRegisterSuccess = { navigateToMainScreen() }
                         )
                     }
 
@@ -68,12 +67,7 @@ class WelcomeActivity : ComponentActivity() {
     private fun navigateToLoginScreen() {
         setContent {
             GuinoteOnlineTheme {
-                /*LoginScreen(
-                    onLoginSuccess = { token ->
-                        viewModel.saveAuthToken(token)
-                        navigateToMainScreen()
-                    }
-                )*/
+                LoginScreen(onLoginSuccess = { navigateToMainScreen() })
             }
         }
     }
@@ -82,7 +76,7 @@ class WelcomeActivity : ComponentActivity() {
         setContent {
             GuinoteOnlineTheme {
                 RegisterScreen(
-                    onRegisterSuccess = { token ->
+                    onRegisterSuccess = {
                         navigateToMainScreen()
                     }
                 )

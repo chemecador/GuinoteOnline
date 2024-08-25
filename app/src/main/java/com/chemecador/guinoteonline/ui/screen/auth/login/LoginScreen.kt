@@ -44,7 +44,7 @@ import com.chemecador.guinoteonline.ui.viewmodel.auth.register.RegisterViewModel
 @Composable
 fun LoginScreen(
     viewModel: RegisterViewModel = hiltViewModel(),
-    onRegisterSuccess: (String) -> Unit
+    onLoginSuccess: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -159,7 +159,7 @@ fun LoginScreen(
             when (state) {
                 is RegisterState.Success -> {
                     Toast.makeText(context, "Registered successfully", Toast.LENGTH_SHORT).show()
-                    onRegisterSuccess("mock_token")
+                    onLoginSuccess()
                 }
 
                 is RegisterState.Error -> {
