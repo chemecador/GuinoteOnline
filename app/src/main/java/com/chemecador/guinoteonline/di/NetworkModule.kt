@@ -1,6 +1,8 @@
 package com.chemecador.guinoteonline.di
 
+import com.chemecador.guinoteonline.data.local.UserPreferences
 import com.chemecador.guinoteonline.data.network.services.AuthService
+import com.chemecador.guinoteonline.di.interceptors.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,13 +20,14 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    fun provideRetrofit(): Retrofit {
+    fun provideRetrofit(userPreferences: UserPreferences): Retrofit {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
 
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(AuthInterceptor(userPreferences))
             .hostnameVerifier { _, _ -> true }
             .build()
 
