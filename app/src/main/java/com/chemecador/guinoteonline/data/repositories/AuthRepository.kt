@@ -29,7 +29,20 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun login(request: LoginRequest) = authService.login(request)
+    suspend fun login(request: LoginRequest): Result<String> {
+        return try {
+            val response = authService.login(request)
+            if (response.isSuccessful) {
+                val token = response.body()?.token ?: return Result.failure(Exception("No token received"))
+                saveToken(token)
+                Result.success(token)
+            } else {
+                Result.failure(Exception("Login failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     suspend fun clearAuthToken() = userPreferences.clearAuthToken()
 

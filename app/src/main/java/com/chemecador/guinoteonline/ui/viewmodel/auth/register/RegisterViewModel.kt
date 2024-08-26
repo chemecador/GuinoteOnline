@@ -68,8 +68,8 @@ class RegisterViewModel @Inject constructor(
             _registerState.value = RegisterState.Loading
 
             val result = authRepository.register(RegisterRequest( username, email, password))
-            result.onSuccess { token ->
-                _registerState.value = RegisterState.Success(token)
+            result.onSuccess {
+                _registerState.value = RegisterState.Success
             }.onFailure { error ->
                 _registerState.value = RegisterState.Error(error.message ?: "Unknown error")
             }
