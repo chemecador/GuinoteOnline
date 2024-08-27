@@ -1,7 +1,7 @@
 package com.chemecador.guinoteonline.data.network.request.auth
 
 data class RegisterRequest(
-    val username: String,
+    val user: String,
     val email: String,
-    val password: String
+    val pass: String
 )
