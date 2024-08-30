@@ -21,12 +21,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
-import com.chemecador.guinoteonline.ui.viewmodel.game.SearchGameViewModel
-import java.util.UUID
+import com.chemecador.guinoteonline.ui.viewmodel.game.GameViewModel
 
 @Composable
 fun SearchGameScreen(
-    viewModel: SearchGameViewModel = hiltViewModel(),
+    viewModel: GameViewModel = hiltViewModel(),
     onGameStart: (GameStartResponse) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -37,7 +36,7 @@ fun SearchGameScreen(
     startGameEvent?.let { gameStartResponse ->
         Toast.makeText(
             context,
-            "${gameStartResponse.userId1} vs ${gameStartResponse.userId2}",
+            "${gameStartResponse.myUsername} vs ${gameStartResponse.opponentUsername}",
             Toast.LENGTH_LONG
         ).show()
         onGameStart(gameStartResponse)
@@ -54,7 +53,7 @@ fun SearchGameScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { viewModel.searchForGame(UUID.randomUUID().toString()) }) {
+        Button(onClick = { viewModel.searchForGame() }) {
             Text(text = "Buscar Partida")
         }
 

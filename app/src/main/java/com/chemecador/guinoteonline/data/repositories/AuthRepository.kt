@@ -33,7 +33,8 @@ class AuthRepository @Inject constructor(
         return try {
             val response = authService.login(request)
             if (response.isSuccessful) {
-                val token = response.body()?.token ?: return Result.failure(Exception("No token received"))
+                val token =
+                    response.body()?.token ?: return Result.failure(Exception("No token received"))
                 saveToken(token)
                 Result.success(token)
             } else {
@@ -46,7 +47,7 @@ class AuthRepository @Inject constructor(
 
     suspend fun clearAuthToken() = userPreferences.clearAuthToken()
 
-    suspend fun getAuthToken(): String? = userPreferences.authToken.firstOrNull()
+    suspend fun getAuthToken() = userPreferences.authToken.firstOrNull() ?: ""
 
     private suspend fun saveToken(token: String) {
         userPreferences.saveAuthToken(token)

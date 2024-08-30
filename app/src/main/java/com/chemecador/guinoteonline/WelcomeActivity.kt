@@ -22,9 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import com.chemecador.guinoteonline.ui.screen.auth.login.LoginScreen
 import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
+import com.chemecador.guinoteonline.ui.screen.game.TwoPlayerGameScreen
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.theme.GuinoteOnlineTheme
 import com.chemecador.guinoteonline.ui.viewmodel.auth.WelcomeViewModel
@@ -43,16 +46,10 @@ class WelcomeActivity : ComponentActivity() {
                 val authToken by viewModel.authToken.observeAsState()
 
                 when {
-                    authToken == null -> {
+                    authToken.isNullOrBlank() -> {
                         WelcomeScreen(
                             onLoginClick = { navigateToLoginScreen() },
                             onRegisterClick = { navigateToRegisterScreen() }
-                        )
-                    }
-
-                    authToken.isNullOrEmpty() -> {
-                        RegisterScreen(
-                            onRegisterSuccess = { navigateToMainScreen() }
                         )
                     }
 
@@ -89,7 +86,20 @@ class WelcomeActivity : ComponentActivity() {
             GuinoteOnlineTheme {
                 SearchGameScreen(
                     onLogout = { navigateToWelcomeScreen() },
-                    onGameStart = {}
+                    onGameStart = { gameStartResponse ->
+                        navigateToTwoPlayerGameScreen(gameStartResponse)
+                    }
+                )
+            }
+        }
+    }
+
+    private fun navigateToTwoPlayerGameScreen(gameStartResponse: GameStartResponse) {
+        setContent {
+            GuinoteOnlineTheme {
+                TwoPlayerGameScreen(
+                    gameStartResponse = gameStartResponse,
+                    gameViewModel = hiltViewModel()
                 )
             }
         }
@@ -131,3 +141,4 @@ class WelcomeActivity : ComponentActivity() {
         finish()
     }
 }
+

@@ -2,7 +2,11 @@ package com.chemecador.guinoteonline.data.model
 
 import com.chemecador.guinoteonline.R
 
-data class Card(val palo: String, val numero: Int, val img: Int)
+data class Card(val palo: String, val numero: Int, val img: Int) {
+    override fun toString(): String {
+        return "$palo$numero"
+    }
+}
 
 object CardUtils {
 

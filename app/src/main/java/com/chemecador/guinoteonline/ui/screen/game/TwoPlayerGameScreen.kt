@@ -16,20 +16,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.R
 import com.chemecador.guinoteonline.data.model.Card
 import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
+import com.chemecador.guinoteonline.ui.viewmodel.game.GameViewModel
 
 @Composable
 fun ShowPlayerCards(
@@ -110,7 +112,13 @@ fun ShowCenterDeck(
 
 
 @Composable
-fun MainScreen(gameStartResponse: GameStartResponse) {
+fun TwoPlayerGameScreen(
+    gameViewModel: GameViewModel = hiltViewModel(),
+    gameStartResponse: GameStartResponse
+) {
+
+    val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -125,7 +133,11 @@ fun MainScreen(gameStartResponse: GameStartResponse) {
             playerCards = gameStartResponse.playerCards,
             triunfoCard = gameStartResponse.triunfoCard,
             onCardPlayed = { cardPlayed ->
-                // TODO
+                if (currentTurn == gameStartResponse.myUsername) {
+                    gameViewModel.playCard(cardPlayed)
+                } else {
+                    Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
+                }
             }
         )
 
@@ -142,21 +154,6 @@ fun MainScreen(gameStartResponse: GameStartResponse) {
         )
     }
 }
-
-
-@Composable
-fun TwoPlayerGameScreen(gameStartResponse: GameStartResponse) {
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        Toast.makeText(
-            context,
-            "${gameStartResponse.userId1} vs ${gameStartResponse.userId2}",
-            Toast.LENGTH_LONG
-        ).show()
-    }
-    MainScreen(gameStartResponse = gameStartResponse)
-}
-
 
 @Composable
 fun ShowOpponentDeck(modifier: Modifier = Modifier) {

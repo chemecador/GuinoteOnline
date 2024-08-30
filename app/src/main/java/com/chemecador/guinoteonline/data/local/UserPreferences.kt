@@ -18,9 +18,9 @@ class UserPreferences @Inject constructor(@ApplicationContext private val contex
         private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
     }
 
-    val authToken: Flow<String?> = context.dataStore.data
+    val authToken: Flow<String> = context.dataStore.data
         .map { preferences ->
-            preferences[AUTH_TOKEN_KEY]
+            preferences[AUTH_TOKEN_KEY] ?: ""
         }
 
     suspend fun saveAuthToken(token: String) {

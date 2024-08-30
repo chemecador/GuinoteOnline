@@ -5,8 +5,9 @@ import com.chemecador.guinoteonline.data.model.Card
 data class GameStartResponse(
     val message: String,
     val gameId: String,
-    val userId1: String,
-    val userId2: String,
+    val myUsername: String,
+    val opponentUsername: String,
     val playerCards: List<Card>,
-    val triunfoCard: Card
+    val triunfoCard: Card,
+    val currentTurn: String
 )
