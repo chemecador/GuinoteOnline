@@ -15,12 +15,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -116,7 +119,6 @@ fun TwoPlayerGameScreen(
     gameViewModel: GameViewModel = hiltViewModel(),
     gameStartResponse: GameStartResponse
 ) {
-
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
     val context = LocalContext.current
 
@@ -126,6 +128,27 @@ fun TwoPlayerGameScreen(
             .background(color = BackgroundColor)
             .padding(top = 16.dp)
     ) {
+        Text(
+            text = "TURNO DE: $currentTurn",
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 16.dp)
+        )
+
+        ShowOpponentDeck(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+        )
+
+        ShowCenterDeck(
+            modifier = Modifier.align(Alignment.Center),
+            numCardsInDeck = 4,
+            triunfoCard = gameStartResponse.triunfoCard
+        )
+
         ShowPlayerCards(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -139,18 +162,6 @@ fun TwoPlayerGameScreen(
                     Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
                 }
             }
-        )
-
-        ShowCenterDeck(
-            modifier = Modifier.align(Alignment.Center),
-            numCardsInDeck = 4,
-            triunfoCard = gameStartResponse.triunfoCard
-        )
-
-        ShowOpponentDeck(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
         )
     }
 }
