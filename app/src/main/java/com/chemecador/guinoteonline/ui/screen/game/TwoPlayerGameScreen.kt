@@ -119,8 +119,12 @@ fun TwoPlayerGameScreen(
     gameViewModel: GameViewModel = hiltViewModel(),
     gameStartResponse: GameStartResponse
 ) {
+
+
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
+    val playedCards by gameViewModel.centerCards.observeAsState(emptyList())
     val context = LocalContext.current
+    gameViewModel.setGameId(gameStartResponse.gameId)
 
     Box(
         modifier = Modifier
@@ -136,19 +140,6 @@ fun TwoPlayerGameScreen(
                 .align(Alignment.TopStart)
                 .padding(start = 16.dp, top = 16.dp)
         )
-
-        ShowOpponentDeck(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
-
-        ShowCenterDeck(
-            modifier = Modifier.align(Alignment.Center),
-            numCardsInDeck = 4,
-            triunfoCard = gameStartResponse.triunfoCard
-        )
-
         ShowPlayerCards(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -163,8 +154,50 @@ fun TwoPlayerGameScreen(
                 }
             }
         )
+
+        ShowCenterDeck(
+            modifier = Modifier.align(Alignment.Center),
+            numCardsInDeck = 4,
+            triunfoCard = gameStartResponse.triunfoCard
+        )
+
+        ShowOpponentDeck(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+        )
+
+        ShowPlayedCard(
+            playedCards = playedCards,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
+
+@Composable
+fun ShowPlayedCard(playedCards: List<Card>, modifier: Modifier = Modifier) {
+    if (playedCards.isNotEmpty()) {
+        val lastPlayedCard = playedCards.last()
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        val cardPosition = screenHeight * 0.55f
+
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(top = cardPosition),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = lastPlayedCard.img),
+                contentDescription = "Played Card",
+                modifier = Modifier
+                    .width(60.dp)
+                    .aspectRatio(0.75f)
+            )
+        }
+    }
+}
+
 
 @Composable
 fun ShowOpponentDeck(modifier: Modifier = Modifier) {

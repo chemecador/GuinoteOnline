@@ -22,6 +22,9 @@ class GameViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
+    private val _currentGameId = MutableLiveData<String?>()
+    val currentGameId: LiveData<String?> get() = _currentGameId
+
     private val _gameStatus = MutableLiveData<String>()
     val gameStatus: LiveData<String> get() = _gameStatus
 
@@ -33,6 +36,12 @@ class GameViewModel @Inject constructor(
 
     private val _token = MutableLiveData<String>()
     val token: LiveData<String> get() = _token
+
+    private val _centerCards = MutableLiveData<List<Card>>()
+    val centerCards: LiveData<List<Card>> get() = _centerCards
+
+    private val _playerCards = MutableLiveData<List<Card>>()
+    val playerCards: LiveData<List<Card>> get() = _playerCards
 
 
     private val socket: Socket
@@ -104,14 +113,43 @@ class GameViewModel @Inject constructor(
         socket.emit("search_game", token.value)
     }
 
+    fun setGameId(gameId: String) {
+        _currentGameId.value = gameId
+    }
+
     fun playCard(card: Card) {
-        socket.emit("play_card", card)
+        viewModelScope.launch {
+            val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
+            updatedCards.remove(card)
+            _playerCards.value = updatedCards
+
+            val updatedCenterCards = _centerCards.value?.toMutableList() ?: mutableListOf()
+            updatedCenterCards.add(card)
+            _centerCards.value = updatedCenterCards
+
+            _currentTurn.value = if (_currentTurn.value == "Player1") "Player2" else "Player1"
+
+            val token = authRepository.getAuthToken()
+            val gameId = _currentGameId.value
+
+            if (gameId != null) {
+                val data = JSONObject()
+                    .put("token", token)
+                    .put("card", card)
+                socket.emit("play_card", data)
+            }
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
         socket.disconnect()
     }
+
+    fun updateCurrentTurn(newTurn: String) {
+        _currentTurn.value = newTurn
+    }
+
 
     fun logout() {
         viewModelScope.launch {
