@@ -104,7 +104,7 @@ object CardUtils {
         return cardResourceMap[cardName] ?: R.drawable.back
     }
 
-    fun stringToCard(cardString: String): Card {
+    fun fromString(cardString: String): Card {
         if (cardString.isBlank()) return Card("", 0, 0)
         val palo = cardString.filter { it.isLetter() }
         val numero = cardString.filter { it.isDigit() }.toInt()

@@ -122,7 +122,10 @@ fun TwoPlayerGameScreen(
 
 
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
-    val playedCards by gameViewModel.centerCards.observeAsState(emptyList())
+    val playedCards by gameViewModel.centerCards.observeAsState()
+    val opponentPlayedCards by gameViewModel.opponentPlayedCards.observeAsState()
+    val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
+
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
 
@@ -144,16 +147,18 @@ fun TwoPlayerGameScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp),
-            playerCards = gameStartResponse.playerCards,
+            playerCards = playerCards,
             triunfoCard = gameStartResponse.triunfoCard,
             onCardPlayed = { cardPlayed ->
-                if (currentTurn == gameStartResponse.myUsername) {
+                if (currentTurn == gameStartResponse.myRole) {
                     gameViewModel.playCard(cardPlayed)
                 } else {
                     Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
                 }
             }
         )
+
+
 
         ShowCenterDeck(
             modifier = Modifier.align(Alignment.Center),
@@ -167,17 +172,22 @@ fun TwoPlayerGameScreen(
                 .padding(top = 16.dp)
         )
 
+        ShowOpponentPlayedCards(
+            modifier = Modifier
+                .align(Alignment.TopCenter),
+            opponentCard = opponentPlayedCards
+        )
+
         ShowPlayedCard(
-            playedCards = playedCards,
+            playedCard = playedCards,
             modifier = Modifier.align(Alignment.Center)
         )
     }
 }
 
 @Composable
-fun ShowPlayedCard(playedCards: List<Card>, modifier: Modifier = Modifier) {
-    if (playedCards.isNotEmpty()) {
-        val lastPlayedCard = playedCards.last()
+fun ShowPlayedCard(playedCard: Card?, modifier: Modifier = Modifier) {
+    if (playedCard != null) {
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val cardPosition = screenHeight * 0.55f
 
@@ -188,7 +198,7 @@ fun ShowPlayedCard(playedCards: List<Card>, modifier: Modifier = Modifier) {
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = lastPlayedCard.img),
+                painter = painterResource(id = playedCard.img),
                 contentDescription = "Played Card",
                 modifier = Modifier
                     .width(60.dp)
@@ -198,6 +208,30 @@ fun ShowPlayedCard(playedCards: List<Card>, modifier: Modifier = Modifier) {
     }
 }
 
+
+@Composable
+fun ShowOpponentPlayedCards(modifier: Modifier = Modifier, opponentCard: Card?) {
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val cardWidth = 60.dp
+
+    Row(
+        modifier = modifier
+            .wrapContentSize(align = Alignment.Center)
+            .offset(y = (screenHeight * 0.25f) - cardWidth)
+    ) {
+        if (opponentCard != null) {
+            Image(
+                painter = painterResource(id = opponentCard.img),
+                contentDescription = "Opponent's played card",
+                modifier = Modifier
+                    .width(cardWidth)
+                    .aspectRatio(0.75f)
+            )
+        }
+
+    }
+}
 
 @Composable
 fun ShowOpponentDeck(modifier: Modifier = Modifier) {

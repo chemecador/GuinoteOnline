@@ -36,7 +36,7 @@ fun SearchGameScreen(
     startGameEvent?.let { gameStartResponse ->
         Toast.makeText(
             context,
-            "${gameStartResponse.myUsername} vs ${gameStartResponse.opponentUsername}",
+            "${gameStartResponse.players[0].username} vs ${gameStartResponse.players[1].username}",
             Toast.LENGTH_LONG
         ).show()
         onGameStart(gameStartResponse)

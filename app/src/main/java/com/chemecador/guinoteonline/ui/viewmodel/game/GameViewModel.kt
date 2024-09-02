@@ -7,12 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.chemecador.guinoteonline.data.model.Card
 import com.chemecador.guinoteonline.data.model.CardUtils
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
+import com.chemecador.guinoteonline.data.network.response.Player
 import com.chemecador.guinoteonline.data.repositories.AuthRepository
 import com.chemecador.guinoteonline.di.NetworkModule.BASE_URL
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import javax.inject.Inject
@@ -37,12 +39,18 @@ class GameViewModel @Inject constructor(
     private val _token = MutableLiveData<String>()
     val token: LiveData<String> get() = _token
 
-    private val _centerCards = MutableLiveData<List<Card>>()
-    val centerCards: LiveData<List<Card>> get() = _centerCards
+    private val _opponentPlayedCards = MutableLiveData<Card>()
+    val opponentPlayedCards: LiveData<Card> get() = _opponentPlayedCards
+
+
+    private val _centerCards = MutableLiveData<Card>()
+    val centerCards: LiveData<Card> get() = _centerCards
 
     private val _playerCards = MutableLiveData<List<Card>>()
     val playerCards: LiveData<List<Card>> get() = _playerCards
 
+
+    private lateinit var gameStartResponse: GameStartResponse
 
     private val socket: Socket
 
@@ -56,6 +64,8 @@ class GameViewModel @Inject constructor(
 
         socket.connect()
         fetchToken()
+        listenForOpponentPlayedCard()
+
     }
 
     private fun fetchToken() {
@@ -76,21 +86,34 @@ class GameViewModel @Inject constructor(
                 _gameStatus.postValue(message)
             }
         }
-
         socket.on("game_start") { args ->
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
-                val gameStartResponse = GameStartResponse(
+
+                val players = data.getJSONArray("players").let { jsonArray ->
+                    List(jsonArray.length()) { index ->
+                        val playerObject = jsonArray.getJSONObject(index)
+                        Player(
+                            role = playerObject.optString("role"),
+                            username = playerObject.optString("username")
+                        )
+                    }
+                }
+
+                gameStartResponse = GameStartResponse(
                     message = data.optString("message"),
                     gameId = data.optString("gameId"),
-                    myUsername = data.optString("myUsername"),
-                    opponentUsername = data.optString("opponentUsername"),
+                    players = players,
+                    myRole = data.optString("myRole"),
                     playerCards = data.getJSONArray("playerCards").let { jsonArray ->
-                        List(jsonArray.length()) { CardUtils.stringToCard(jsonArray.getString(it)) }
+                        List(jsonArray.length()) { CardUtils.fromString(jsonArray.getString(it)) }
                     },
-                    triunfoCard = CardUtils.stringToCard(data.optString("triunfoCard")),
+                    triunfoCard = CardUtils.fromString(data.optString("triunfoCard")),
                     currentTurn = data.optString("currentTurn")
                 )
+
+                _playerCards.postValue(gameStartResponse.playerCards)
+
                 Timber.tag("GameStart").i(gameStartResponse.toString())
                 _startGameEvent.postValue(gameStartResponse)
             }
@@ -119,15 +142,14 @@ class GameViewModel @Inject constructor(
 
     fun playCard(card: Card) {
         viewModelScope.launch {
+
             val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
             updatedCards.remove(card)
             _playerCards.value = updatedCards
 
-            val updatedCenterCards = _centerCards.value?.toMutableList() ?: mutableListOf()
-            updatedCenterCards.add(card)
-            _centerCards.value = updatedCenterCards
+            _centerCards.value = card
 
-            _currentTurn.value = if (_currentTurn.value == "Player1") "Player2" else "Player1"
+            _currentTurn.value = if (_currentTurn.value == "player1") "player2" else "player1"
 
             val token = authRepository.getAuthToken()
             val gameId = _currentGameId.value
@@ -136,10 +158,33 @@ class GameViewModel @Inject constructor(
                 val data = JSONObject()
                     .put("token", token)
                     .put("card", card)
+                    .put("gameId", gameId)
+                    .put("players", JSONArray(gameStartResponse.players.map {
+                        JSONObject().put("role", it.role).put("username", it.username)
+                    }))
                 socket.emit("play_card", data)
             }
         }
     }
+
+    private fun listenForOpponentPlayedCard() {
+        socket.on("card_played") { data ->
+            val jsonData = JSONObject(data[0].toString())
+            val cardName = jsonData.getString("card")
+            val card = CardUtils.fromString(cardName)
+
+            viewModelScope.launch {
+
+                _opponentPlayedCards.postValue(card)
+
+                val playedBy = jsonData.getString("playedBy")
+                val nextTurn =
+                    gameStartResponse.players.find { it.username != playedBy }?.role ?: "player1"
+                _currentTurn.postValue(nextTurn)
+            }
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()
