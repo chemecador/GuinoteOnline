@@ -118,7 +118,26 @@ class GameViewModel @Inject constructor(
                 _startGameEvent.postValue(gameStartResponse)
             }
         }
+        socket.on("update_turn") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val newTurn = data.optString("currentTurn")
+                _currentTurn.postValue(newTurn)
+            }
+        }
+        socket.on("round_winner") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val winner = data.getString("winner")
+                val pointsGained = data.getInt("pointsGained")
+                val team1Points = data.getInt("team1Points")
+                val team2Points = data.getInt("team2Points")
+                val nextTurn = data.getString("nextTurn")
 
+                _currentTurn.postValue(nextTurn)
+                Timber.tag("RoundWinner").d("Ganador: $winner, Puntos ganados: $pointsGained, Equipo 1: $team1Points, Equipo 2: $team2Points")
+            }
+        }
         socket.on("update_turn") { args ->
             if (args.isNotEmpty()) {
                 val data = args[0] as JSONObject
@@ -149,8 +168,6 @@ class GameViewModel @Inject constructor(
 
             _centerCards.value = card
 
-            _currentTurn.value = if (_currentTurn.value == "player1") "player2" else "player1"
-
             val token = authRepository.getAuthToken()
             val gameId = _currentGameId.value
 
@@ -168,33 +185,29 @@ class GameViewModel @Inject constructor(
     }
 
     private fun listenForOpponentPlayedCard() {
-        socket.on("card_played") { data ->
-            val jsonData = JSONObject(data[0].toString())
-            val cardName = jsonData.getString("card")
-            val card = CardUtils.fromString(cardName)
-
-            viewModelScope.launch {
-
-                _opponentPlayedCards.postValue(card)
-
+        socket.on("card_played") { args ->
+            if (args.isNotEmpty()) {
+                val jsonData = JSONObject(args[0].toString())
+                val cardName = jsonData.getString("card")
+                val card = CardUtils.fromString(cardName)
                 val playedBy = jsonData.getString("playedBy")
-                val nextTurn =
-                    gameStartResponse.players.find { it.username != playedBy }?.role ?: "player1"
-                _currentTurn.postValue(nextTurn)
+                val newTurn = jsonData.getString("currentTurn")
+
+                viewModelScope.launch {
+                    if (playedBy != gameStartResponse.myRole) {
+                        _opponentPlayedCards.postValue(card)
+                    }
+
+                    _currentTurn.postValue(newTurn)
+                }
             }
         }
     }
-
 
     override fun onCleared() {
         super.onCleared()
         socket.disconnect()
     }
-
-    fun updateCurrentTurn(newTurn: String) {
-        _currentTurn.value = newTurn
-    }
-
 
     fun logout() {
         viewModelScope.launch {
