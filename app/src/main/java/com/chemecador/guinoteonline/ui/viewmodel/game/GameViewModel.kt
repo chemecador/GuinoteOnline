@@ -39,15 +39,21 @@ class GameViewModel @Inject constructor(
     private val _token = MutableLiveData<String>()
     val token: LiveData<String> get() = _token
 
-    private val _opponentPlayedCards = MutableLiveData<Card>()
-    val opponentPlayedCards: LiveData<Card> get() = _opponentPlayedCards
+    private val _opponentPlayedCards = MutableLiveData<Card?>()
+    val opponentPlayedCards: MutableLiveData<Card?> get() = _opponentPlayedCards
 
-
-    private val _centerCards = MutableLiveData<Card>()
-    val centerCards: LiveData<Card> get() = _centerCards
+    private val _centerCards = MutableLiveData<Card?>()
+    val centerCards: MutableLiveData<Card?> get() = _centerCards
 
     private val _playerCards = MutableLiveData<List<Card>>()
     val playerCards: LiveData<List<Card>> get() = _playerCards
+
+    private val _playerWonCards = MutableLiveData<List<Card>>()
+    val playerWonCards: LiveData<List<Card>> get() = _playerWonCards
+
+    private val _opponentWonCards = MutableLiveData<List<Card>>()
+    val opponentWonCards: LiveData<List<Card>> get() = _opponentWonCards
+
 
 
     private lateinit var gameStartResponse: GameStartResponse
@@ -135,12 +141,30 @@ class GameViewModel @Inject constructor(
                 val team2Points = data.getInt("team2Points")
                 val nextTurn = data.getString("nextTurn")
 
-                Timber.tag("RoundWinner").d("Ganador: $winner, Próximo turno: $nextTurn")
+                val playedCard = _centerCards.value
+                val opponentPlayedCard = _opponentPlayedCards.value
 
                 viewModelScope.launch {
+                    _centerCards.postValue(null)
+                    _opponentPlayedCards.postValue(null)
                     _currentTurn.postValue(nextTurn)
+
+                    if (winner == gameStartResponse.myRole) {
+                        val updatedPlayerWonCards = _playerWonCards.value?.toMutableList() ?: mutableListOf()
+                        if (playedCard != null) updatedPlayerWonCards.add(playedCard)
+                        if (opponentPlayedCard != null) updatedPlayerWonCards.add(opponentPlayedCard)
+                        _playerWonCards.postValue(updatedPlayerWonCards)
+                    } else {
+                        val updatedOpponentWonCards = _opponentWonCards.value?.toMutableList() ?: mutableListOf()
+                        if (playedCard != null) updatedOpponentWonCards.add(playedCard)
+                        if (opponentPlayedCard != null) updatedOpponentWonCards.add(opponentPlayedCard)
+                        _opponentWonCards.postValue(updatedOpponentWonCards)
+                    }
+
+                    Timber.d("Cartas jugadas limpiadas y asignadas correctamente al ganador")
                 }
 
+                Timber.tag("RoundWinner").d("Ganador: $winner, Próximo turno: $nextTurn")
                 Timber.tag("RoundWinner").d("Ganador: $winner, Puntos ganados: $pointsGained, Equipo 1: $team1Points, Equipo 2: $team2Points")
             }
         }

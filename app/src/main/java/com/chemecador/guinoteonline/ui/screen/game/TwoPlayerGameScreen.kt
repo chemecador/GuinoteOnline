@@ -113,18 +113,18 @@ fun ShowCenterDeck(
     }
 }
 
-
 @Composable
 fun TwoPlayerGameScreen(
     gameViewModel: GameViewModel = hiltViewModel(),
     gameStartResponse: GameStartResponse
 ) {
 
-
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
     val playedCards by gameViewModel.centerCards.observeAsState()
     val opponentPlayedCards by gameViewModel.opponentPlayedCards.observeAsState()
     val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
+    val playerWonCards by gameViewModel.playerWonCards.observeAsState(emptyList())
+    val opponentWonCards by gameViewModel.opponentWonCards.observeAsState(emptyList())
 
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
@@ -143,6 +143,21 @@ fun TwoPlayerGameScreen(
                 .align(Alignment.TopStart)
                 .padding(start = 16.dp, top = 16.dp)
         )
+
+        ShowWonCards(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 160.dp, end = 16.dp),
+            wonCards = opponentWonCards
+        )
+
+        ShowWonCards(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 160.dp, end = 16.dp),
+            wonCards = playerWonCards
+        )
+
         ShowPlayerCards(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -157,8 +172,6 @@ fun TwoPlayerGameScreen(
                 }
             }
         )
-
-
 
         ShowCenterDeck(
             modifier = Modifier.align(Alignment.Center),
@@ -181,6 +194,24 @@ fun TwoPlayerGameScreen(
         ShowPlayedCard(
             playedCard = playedCards,
             modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+fun ShowWonCards(
+    modifier: Modifier = Modifier,
+    wonCards: List<Card>
+) {
+    if (wonCards.isNotEmpty()) {
+        val backDrawable = painterResource(id = R.drawable.back)
+
+        Image(
+            painter = backDrawable,
+            contentDescription = "Won cards",
+            modifier = modifier
+                .width(60.dp)
+                .aspectRatio(0.75f)
         )
     }
 }
