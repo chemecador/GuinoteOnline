@@ -65,6 +65,7 @@ class GameViewModel @Inject constructor(
         socket.connect()
         fetchToken()
         listenForOpponentPlayedCard()
+        listenForNewCard()
 
     }
 
@@ -134,7 +135,12 @@ class GameViewModel @Inject constructor(
                 val team2Points = data.getInt("team2Points")
                 val nextTurn = data.getString("nextTurn")
 
-                _currentTurn.postValue(nextTurn)
+                Timber.tag("RoundWinner").d("Ganador: $winner, Próximo turno: $nextTurn")
+
+                viewModelScope.launch {
+                    _currentTurn.postValue(nextTurn)
+                }
+
                 Timber.tag("RoundWinner").d("Ganador: $winner, Puntos ganados: $pointsGained, Equipo 1: $team1Points, Equipo 2: $team2Points")
             }
         }
@@ -203,6 +209,25 @@ class GameViewModel @Inject constructor(
             }
         }
     }
+
+    private fun listenForNewCard() {
+        socket.on("new_card") { args ->
+            if (args.isNotEmpty()) {
+                val jsonData = JSONObject(args[0].toString())
+                val cardName = jsonData.getString("newCard")
+                val newCard = CardUtils.fromString(cardName)
+
+                viewModelScope.launch {
+                    val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
+                    updatedCards.add(newCard)
+                    _playerCards.postValue(updatedCards)
+                }
+
+                Timber.d("Nueva carta recibida: $newCard")
+            }
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()
