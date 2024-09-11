@@ -13,6 +13,7 @@ import com.chemecador.guinoteonline.di.NetworkModule.BASE_URL
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -54,6 +55,8 @@ class GameViewModel @Inject constructor(
     private val _opponentWonCards = MutableLiveData<List<Card>>()
     val opponentWonCards: LiveData<List<Card>> get() = _opponentWonCards
 
+    private val _isInteractionEnabled = MutableLiveData<Boolean>(true)
+    val isInteractionEnabled: LiveData<Boolean> get() = _isInteractionEnabled
 
 
     private lateinit var gameStartResponse: GameStartResponse
@@ -144,28 +147,38 @@ class GameViewModel @Inject constructor(
                 val playedCard = _centerCards.value
                 val opponentPlayedCard = _opponentPlayedCards.value
 
+                _isInteractionEnabled.postValue(false)
+
                 viewModelScope.launch {
+                    delay(1750) // Give the user some time to see the cards played
                     _centerCards.postValue(null)
                     _opponentPlayedCards.postValue(null)
                     _currentTurn.postValue(nextTurn)
 
                     if (winner == gameStartResponse.myRole) {
-                        val updatedPlayerWonCards = _playerWonCards.value?.toMutableList() ?: mutableListOf()
+                        val updatedPlayerWonCards =
+                            _playerWonCards.value?.toMutableList() ?: mutableListOf()
                         if (playedCard != null) updatedPlayerWonCards.add(playedCard)
                         if (opponentPlayedCard != null) updatedPlayerWonCards.add(opponentPlayedCard)
                         _playerWonCards.postValue(updatedPlayerWonCards)
                     } else {
-                        val updatedOpponentWonCards = _opponentWonCards.value?.toMutableList() ?: mutableListOf()
+                        val updatedOpponentWonCards =
+                            _opponentWonCards.value?.toMutableList() ?: mutableListOf()
                         if (playedCard != null) updatedOpponentWonCards.add(playedCard)
-                        if (opponentPlayedCard != null) updatedOpponentWonCards.add(opponentPlayedCard)
+                        if (opponentPlayedCard != null) updatedOpponentWonCards.add(
+                            opponentPlayedCard
+                        )
                         _opponentWonCards.postValue(updatedOpponentWonCards)
                     }
 
                     Timber.d("Cartas jugadas limpiadas y asignadas correctamente al ganador")
+                    _isInteractionEnabled.postValue(true)
                 }
 
-                Timber.tag("RoundWinner").d("Ganador: $winner, Próximo turno: $nextTurn")
-                Timber.tag("RoundWinner").d("Ganador: $winner, Puntos ganados: $pointsGained, Equipo 1: $team1Points, Equipo 2: $team2Points")
+                Timber.tag("RoundWinner")
+                    .d("Ganador: $winner, Próximo turno: $nextTurn")
+                Timber.tag("RoundWinner")
+                    .d("Ganador: $winner, Puntos ganados: $pointsGained, Equipo 1: $team1Points, Equipo 2: $team2Points")
             }
         }
         socket.on("update_turn") { args ->
@@ -190,6 +203,8 @@ class GameViewModel @Inject constructor(
     }
 
     fun playCard(card: Card) {
+        if (_isInteractionEnabled.value == false) return
+
         viewModelScope.launch {
 
             val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
