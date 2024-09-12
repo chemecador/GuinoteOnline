@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -125,6 +126,9 @@ fun TwoPlayerGameScreen(
     val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
     val playerWonCards by gameViewModel.playerWonCards.observeAsState(emptyList())
     val opponentWonCards by gameViewModel.opponentWonCards.observeAsState(emptyList())
+    val team1Points by gameViewModel.team1Points.observeAsState(0)
+    val team2Points by gameViewModel.team2Points.observeAsState(0)
+    val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
 
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
@@ -144,6 +148,23 @@ fun TwoPlayerGameScreen(
                 .padding(start = 16.dp, top = 16.dp)
         )
 
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 50.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Equipo 1: $team1Points",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Equipo 2: $team2Points",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
         ShowWonCards(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -173,12 +194,13 @@ fun TwoPlayerGameScreen(
             }
         )
 
-        ShowCenterDeck(
-            modifier = Modifier.align(Alignment.Center),
-            numCardsInDeck = 4,
-            triunfoCard = gameStartResponse.triunfoCard
-        )
-
+        if (!isDeckEmpty) {
+            ShowCenterDeck(
+                modifier = Modifier.align(Alignment.Center),
+                numCardsInDeck = 4,
+                triunfoCard = gameStartResponse.triunfoCard
+            )
+        }
         ShowOpponentDeck(
             modifier = Modifier
                 .align(Alignment.TopCenter)

@@ -26,7 +26,6 @@ class GameViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _currentGameId = MutableLiveData<String?>()
-    val currentGameId: LiveData<String?> get() = _currentGameId
 
     private val _gameStatus = MutableLiveData<String>()
     val gameStatus: LiveData<String> get() = _gameStatus
@@ -55,9 +54,17 @@ class GameViewModel @Inject constructor(
     private val _opponentWonCards = MutableLiveData<List<Card>>()
     val opponentWonCards: LiveData<List<Card>> get() = _opponentWonCards
 
-    private val _isInteractionEnabled = MutableLiveData<Boolean>(true)
-    val isInteractionEnabled: LiveData<Boolean> get() = _isInteractionEnabled
+    private val _isInteractionEnabled = MutableLiveData(true)
 
+    private val _team1Points = MutableLiveData(0)
+    val team1Points: LiveData<Int> get() = _team1Points
+
+    private val _team2Points = MutableLiveData(0)
+    val team2Points: LiveData<Int> get() = _team2Points
+
+
+    private val _isDeckEmpty = MutableLiveData<Boolean>(false)
+    val isDeckEmpty: LiveData<Boolean> get() = _isDeckEmpty
 
     private lateinit var gameStartResponse: GameStartResponse
 
@@ -75,6 +82,7 @@ class GameViewModel @Inject constructor(
         fetchToken()
         listenForOpponentPlayedCard()
         listenForNewCard()
+        listenForDeckEmpty()
 
     }
 
@@ -150,6 +158,8 @@ class GameViewModel @Inject constructor(
                 _isInteractionEnabled.postValue(false)
 
                 viewModelScope.launch {
+                    _team1Points.postValue(team1Points)
+                    _team2Points.postValue(team2Points)
                     delay(1750) // Give the user some time to see the cards played
                     _centerCards.postValue(null)
                     _opponentPlayedCards.postValue(null)
@@ -267,6 +277,13 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    private fun listenForDeckEmpty() {
+        socket.on("deck_empty") {
+            viewModelScope.launch {
+                _isDeckEmpty.postValue(true)
+            }
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
