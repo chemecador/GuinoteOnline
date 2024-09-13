@@ -155,12 +155,12 @@ fun TwoPlayerGameScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Equipo 1: $team1Points",
+                text = "Jugador 1: ${formatPoints(team1Points)}",
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "Equipo 2: $team2Points",
+                text = "Jugador 2: ${formatPoints(team2Points)}",
                 color = Color.White,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -317,5 +317,13 @@ fun ShowOpponentDeck(modifier: Modifier = Modifier) {
                     .offset(x = offsets[index])
             )
         }
+    }
+}
+
+fun formatPoints(points: Int): String {
+    return if (points > 50) {
+        "${points - 50} buenas"
+    } else {
+        "$points malas"
     }
 }
