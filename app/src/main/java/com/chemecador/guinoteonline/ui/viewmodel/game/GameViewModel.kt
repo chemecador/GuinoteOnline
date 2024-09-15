@@ -62,6 +62,9 @@ class GameViewModel @Inject constructor(
     private val _team2Points = MutableLiveData(0)
     val team2Points: LiveData<Int> get() = _team2Points
 
+    private val _canCantar = MutableLiveData<Boolean>()
+    val canCantar: LiveData<Boolean> get() = _canCantar
+
 
     private val _isDeckEmpty = MutableLiveData<Boolean>(false)
     val isDeckEmpty: LiveData<Boolean> get() = _isDeckEmpty
@@ -83,6 +86,7 @@ class GameViewModel @Inject constructor(
         listenForOpponentPlayedCard()
         listenForNewCard()
         listenForDeckEmpty()
+        listenForCantarNotification()
 
     }
 
@@ -270,6 +274,7 @@ class GameViewModel @Inject constructor(
                     val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
                     updatedCards.add(newCard)
                     _playerCards.postValue(updatedCards)
+                    checkIfCanCantar()
                 }
 
                 Timber.d("Nueva carta recibida: $newCard")
@@ -284,6 +289,66 @@ class GameViewModel @Inject constructor(
             }
         }
     }
+
+
+    private fun checkIfCanCantar() {
+        val playerHand = _playerCards.value ?: return
+
+        val groupedBySuit = playerHand.groupBy { it.palo }
+
+        for ((_, cards) in groupedBySuit) {
+            if (cards.any { it.numero == 12 } && cards.any { it.numero == 10 }) {
+                _canCantar.value = true
+                return
+            }
+        }
+
+        _canCantar.value = false
+    }
+
+
+    fun cantar() {
+        val playerHand = _playerCards.value ?: return
+        val triumphSuit = gameStartResponse.triunfoCard.palo
+
+        val groupedBySuit = playerHand.groupBy { it.palo }
+
+        for ((suit, cards) in groupedBySuit) {
+            if (cards.any { it.numero == 12 } && cards.any { it.numero == 10 }) {
+                val points = if (suit == triumphSuit) 40 else 20
+
+                val data = JSONObject()
+                    .put("gameId", _currentGameId.value)
+                    .put("points", points)
+                    .put("suit", suit)
+                    .put("player", gameStartResponse.myRole)
+                socket.emit("cantar", data)
+                Timber.e("Voy a cantar: $points puntos en $suit, $data")
+            }
+        }
+    }
+
+    private fun listenForCantarNotification() {
+        socket.on("cantar_notificacion") { args ->
+            if (args.isNotEmpty()) {
+                val data = JSONObject(args[0].toString())
+                val player = data.getString("player")
+                val points = data.getInt("points")
+                val suit = data.getString("suit")
+
+                Timber.d("$player cantó $points puntos en el palo $suit")
+
+                val team1Points = data.getInt("team1Points")
+                val team2Points = data.getInt("team2Points")
+
+                viewModelScope.launch {
+                    _team1Points.postValue(team1Points)
+                    _team2Points.postValue(team2Points)
+                }
+            }
+        }
+    }
+
 
     override fun onCleared() {
         super.onCleared()

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -129,6 +130,7 @@ fun TwoPlayerGameScreen(
     val team1Points by gameViewModel.team1Points.observeAsState(0)
     val team2Points by gameViewModel.team2Points.observeAsState(0)
     val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
+    val canCantar by gameViewModel.canCantar.observeAsState(false)
 
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
@@ -139,6 +141,8 @@ fun TwoPlayerGameScreen(
             .background(color = BackgroundColor)
             .padding(top = 16.dp)
     ) {
+        val configuration = LocalConfiguration.current
+        val screenHeight = configuration.screenHeightDp.dp
         Text(
             text = "TURNO DE: $currentTurn",
             color = Color.White,
@@ -147,6 +151,21 @@ fun TwoPlayerGameScreen(
                 .align(Alignment.TopStart)
                 .padding(start = 16.dp, top = 16.dp)
         )
+
+        if (canCantar) {
+            Button(
+                onClick = { gameViewModel.cantar() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(
+                        y = screenHeight * 0.75f,
+                        x = (-8).dp
+                    )
+                    .padding(end = 8.dp)
+            ) {
+                Text(text = "Cantar")
+            }
+        }
 
         Column(
             modifier = Modifier
