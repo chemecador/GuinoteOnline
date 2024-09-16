@@ -159,7 +159,7 @@ fun TwoPlayerGameScreen(
                     .align(Alignment.TopStart)
                     .offset(
                         y = screenHeight * 0.75f,
-                        x = (-8).dp
+                        x = 16.dp
                     )
                     .padding(end = 8.dp)
             ) {
