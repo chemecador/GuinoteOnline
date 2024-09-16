@@ -324,6 +324,7 @@ class GameViewModel @Inject constructor(
                     .put("player", gameStartResponse.myRole)
                 socket.emit("cantar", data)
                 Timber.e("Voy a cantar: $points puntos en $suit, $data")
+                _canCantar.postValue(false)
             }
         }
     }
