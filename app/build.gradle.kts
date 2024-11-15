@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.android.hilt)
     kotlin("kapt")
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -63,6 +64,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.compiler)
 
     // Retrofit
     implementation(libs.okhttp)
