@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.R
@@ -39,17 +40,161 @@ import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.viewmodel.game.GameViewModel
 
 @Composable
-fun ShowPlayerCards(
+fun TwoPlayerGameScreen(
+    gameViewModel: GameViewModel = hiltViewModel(),
+    gameStartResponse: GameStartResponse
+) {
+
+    val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
+    val playedCards by gameViewModel.centerCards.observeAsState()
+    val opponentPlayedCards by gameViewModel.opponentPlayedCards.observeAsState()
+    val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
+    val playerWonCards by gameViewModel.playerWonCards.observeAsState(emptyList())
+    val opponentWonCards by gameViewModel.opponentWonCards.observeAsState(emptyList())
+    val team1Points by gameViewModel.team1Points.observeAsState(0)
+    val team2Points by gameViewModel.team2Points.observeAsState(0)
+    val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
+    val canCantar by gameViewModel.canCantar.observeAsState(false)
+    val canExchangeSeven = gameViewModel.canExchangeSeven(
+        playerCards,
+        triunfoCard = gameStartResponse.triunfoCard
+    )
+
+    val context = LocalContext.current
+    gameViewModel.setGameId(gameStartResponse.gameId)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = BackgroundColor)
+            .padding(top = 16.dp)
+    ) {
+        val configuration = LocalConfiguration.current
+        val screenHeight = configuration.screenHeightDp.dp
+        Text(
+            text = "TURNO DE: $currentTurn",
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 16.dp)
+        )
+
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 50.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Jugador 1: ${formatPoints(team1Points)}",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Jugador 2: ${formatPoints(team2Points)}",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        ShowWonCards(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 160.dp, end = 16.dp),
+            wonCards = opponentWonCards
+        )
+
+        ShowWonCards(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 160.dp, end = 16.dp),
+            wonCards = playerWonCards
+        )
+
+        val cardHeight = showPlayerCards(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp),
+            playerCards = playerCards,
+            triunfoCard = gameStartResponse.triunfoCard,
+            onCardPlayed = { cardPlayed ->
+                if (currentTurn == gameStartResponse.myRole) {
+                    gameViewModel.playCard(cardPlayed)
+                } else {
+                    Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+
+        if (canExchangeSeven) {
+            Button(
+                onClick = { gameViewModel.exchangeSeven() },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(y = -cardHeight - 64.dp)
+                    .padding(start = 8.dp, bottom = 8.dp)
+            ) {
+                Text(text = "Cambiar 7")
+            }
+        }
+
+
+        if (canCantar) {
+            Button(
+                onClick = { gameViewModel.cantar() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(
+                        y = screenHeight * 0.75f,
+                        x = 16.dp
+                    )
+                    .padding(end = 8.dp)
+            ) {
+                Text(text = "Cantar")
+            }
+        }
+
+
+        if (!isDeckEmpty) {
+            ShowCenterDeck(
+                modifier = Modifier.align(Alignment.Center),
+                numCardsInDeck = 4,
+                triunfoCard = gameStartResponse.triunfoCard
+            )
+        }
+        ShowOpponentDeck(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+        )
+
+        ShowOpponentPlayedCards(
+            modifier = Modifier
+                .align(Alignment.TopCenter),
+            opponentCard = opponentPlayedCards
+        )
+
+        ShowPlayedCard(
+            playedCard = playedCards,
+            modifier = Modifier.align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+fun showPlayerCards(
     modifier: Modifier = Modifier,
     playerCards: List<Card>,
     triunfoCard: Card,
     onCardPlayed: (Card) -> Unit
-) {
+): Dp {
     val sortedCards = CardUtils.sortPlayerCards(playerCards, triunfoCard.palo)
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val cardWidth = (screenWidth * 2 / 13).dp
+    val cardHeight = cardWidth * 0.75f // Calculamos la altura a partir de la relación de aspecto
 
     Row(
         modifier = modifier
@@ -70,6 +215,8 @@ fun ShowPlayerCards(
             )
         }
     }
+
+    return cardHeight // Devolvemos la altura de la carta
 }
 
 
@@ -116,130 +263,6 @@ fun ShowCenterDeck(
 }
 
 @Composable
-fun TwoPlayerGameScreen(
-    gameViewModel: GameViewModel = hiltViewModel(),
-    gameStartResponse: GameStartResponse
-) {
-
-    val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
-    val playedCards by gameViewModel.centerCards.observeAsState()
-    val opponentPlayedCards by gameViewModel.opponentPlayedCards.observeAsState()
-    val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
-    val playerWonCards by gameViewModel.playerWonCards.observeAsState(emptyList())
-    val opponentWonCards by gameViewModel.opponentWonCards.observeAsState(emptyList())
-    val team1Points by gameViewModel.team1Points.observeAsState(0)
-    val team2Points by gameViewModel.team2Points.observeAsState(0)
-    val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
-    val canCantar by gameViewModel.canCantar.observeAsState(false)
-
-    val context = LocalContext.current
-    gameViewModel.setGameId(gameStartResponse.gameId)
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = BackgroundColor)
-            .padding(top = 16.dp)
-    ) {
-        val configuration = LocalConfiguration.current
-        val screenHeight = configuration.screenHeightDp.dp
-        Text(
-            text = "TURNO DE: $currentTurn",
-            color = Color.White,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 16.dp)
-        )
-
-        if (canCantar) {
-            Button(
-                onClick = { gameViewModel.cantar() },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(
-                        y = screenHeight * 0.75f,
-                        x = 16.dp
-                    )
-                    .padding(end = 8.dp)
-            ) {
-                Text(text = "Cantar")
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 50.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Jugador 1: ${formatPoints(team1Points)}",
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Jugador 2: ${formatPoints(team2Points)}",
-                color = Color.White,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        ShowWonCards(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 160.dp, end = 16.dp),
-            wonCards = opponentWonCards
-        )
-
-        ShowWonCards(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 160.dp, end = 16.dp),
-            wonCards = playerWonCards
-        )
-
-        ShowPlayerCards(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
-            playerCards = playerCards,
-            triunfoCard = gameStartResponse.triunfoCard,
-            onCardPlayed = { cardPlayed ->
-                if (currentTurn == gameStartResponse.myRole) {
-                    gameViewModel.playCard(cardPlayed)
-                } else {
-                    Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
-                }
-            }
-        )
-
-        if (!isDeckEmpty) {
-            ShowCenterDeck(
-                modifier = Modifier.align(Alignment.Center),
-                numCardsInDeck = 4,
-                triunfoCard = gameStartResponse.triunfoCard
-            )
-        }
-        ShowOpponentDeck(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
-
-        ShowOpponentPlayedCards(
-            modifier = Modifier
-                .align(Alignment.TopCenter),
-            opponentCard = opponentPlayedCards
-        )
-
-        ShowPlayedCard(
-            playedCard = playedCards,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
-
-@Composable
 fun ShowWonCards(
     modifier: Modifier = Modifier,
     wonCards: List<Card>
@@ -279,7 +302,6 @@ fun ShowPlayedCard(playedCard: Card?, modifier: Modifier = Modifier) {
         }
     }
 }
-
 
 @Composable
 fun ShowOpponentPlayedCards(modifier: Modifier = Modifier, opponentCard: Card?) {

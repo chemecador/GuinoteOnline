@@ -37,13 +37,14 @@ class GameViewModel @Inject constructor(
     val currentTurn: LiveData<String> get() = _currentTurn
 
     private val _token = MutableLiveData<String>()
-    val token: LiveData<String> get() = _token
 
     private val _opponentPlayedCards = MutableLiveData<Card?>()
     val opponentPlayedCards: MutableLiveData<Card?> get() = _opponentPlayedCards
 
     private val _centerCards = MutableLiveData<Card?>()
     val centerCards: MutableLiveData<Card?> get() = _centerCards
+
+    private val _triunfoCard = MutableLiveData<Card>()
 
     private val _playerCards = MutableLiveData<List<Card>>()
     val playerCards: LiveData<List<Card>> get() = _playerCards
@@ -65,12 +66,16 @@ class GameViewModel @Inject constructor(
     private val _canCantar = MutableLiveData<Boolean>()
     val canCantar: LiveData<Boolean> get() = _canCantar
 
+    private val _hasExchangedSeven = MutableLiveData(false)
 
-    private val _isDeckEmpty = MutableLiveData<Boolean>(false)
+    private val _isDeckEmpty = MutableLiveData(false)
     val isDeckEmpty: LiveData<Boolean> get() = _isDeckEmpty
 
-    private lateinit var gameStartResponse: GameStartResponse
+    private val _lastWinner = MutableLiveData<String>()
 
+    private val palosCantados = mutableSetOf<String>()
+
+    private lateinit var gameStartResponse: GameStartResponse
     private val socket: Socket
 
     init {
@@ -122,6 +127,8 @@ class GameViewModel @Inject constructor(
                     }
                 }
 
+                val triunfoCard = CardUtils.fromString(data.optString("triunfoCard"))
+                _triunfoCard.postValue(triunfoCard)
                 gameStartResponse = GameStartResponse(
                     message = data.optString("message"),
                     gameId = data.optString("gameId"),
@@ -130,7 +137,7 @@ class GameViewModel @Inject constructor(
                     playerCards = data.getJSONArray("playerCards").let { jsonArray ->
                         List(jsonArray.length()) { CardUtils.fromString(jsonArray.getString(it)) }
                     },
-                    triunfoCard = CardUtils.fromString(data.optString("triunfoCard")),
+                    triunfoCard = triunfoCard,
                     currentTurn = data.optString("currentTurn")
                 )
 
@@ -159,6 +166,7 @@ class GameViewModel @Inject constructor(
                 val playedCard = _centerCards.value
                 val opponentPlayedCard = _opponentPlayedCards.value
 
+                _lastWinner.postValue(winner)
                 _isInteractionEnabled.postValue(false)
 
                 viewModelScope.launch {
@@ -203,14 +211,37 @@ class GameViewModel @Inject constructor(
             }
         }
 
+        socket.on("seven_exchanged") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val newTriunfo = data.getString("newTriunfo")
+                val exchangedCardString = data.getString("exchangedCard")
+
+                val newTriunfoCard = CardUtils.fromString(newTriunfo)
+                val exchangedCard = CardUtils.fromString(exchangedCardString)
+
+                _triunfoCard.postValue(newTriunfoCard)
+
+                if (data.getString("player") == gameStartResponse.myRole) {
+                    val updatedHand = _playerCards.value?.toMutableList() ?: mutableListOf()
+
+                    updatedHand.remove(exchangedCard)
+                    updatedHand.add(newTriunfoCard)
+                    _playerCards.postValue(updatedHand)
+                }
+            }
+        }
+
+
         socket.on(Socket.EVENT_DISCONNECT) {
             Timber.tag("Socket").d("Disconnected")
         }
     }
 
     fun searchForGame() {
-        socket.emit("search_game", token.value)
+        socket.emit("search_game", _token.value)
     }
+
 
     fun setGameId(gameId: String) {
         _currentGameId.value = gameId
@@ -290,22 +321,24 @@ class GameViewModel @Inject constructor(
         }
     }
 
-
     private fun checkIfCanCantar() {
         val playerHand = _playerCards.value ?: return
+        if (_lastWinner.value != gameStartResponse.myRole) {
+            _canCantar.postValue(false)
+            return
+        }
 
         val groupedBySuit = playerHand.groupBy { it.palo }
 
         for ((_, cards) in groupedBySuit) {
             if (cards.any { it.numero == 12 } && cards.any { it.numero == 10 }) {
-                _canCantar.value = true
+                _canCantar.postValue(true)
                 return
             }
         }
 
-        _canCantar.value = false
+        _canCantar.postValue(false)
     }
-
 
     fun cantar() {
         val playerHand = _playerCards.value ?: return
@@ -314,7 +347,10 @@ class GameViewModel @Inject constructor(
         val groupedBySuit = playerHand.groupBy { it.palo }
 
         for ((suit, cards) in groupedBySuit) {
-            if (cards.any { it.numero == 12 } && cards.any { it.numero == 10 }) {
+            if (!palosCantados.contains(suit) &&
+                cards.any { it.numero == 12 } && cards.any { it.numero == 10 }
+            ) {
+
                 val points = if (suit == triumphSuit) 40 else 20
 
                 val data = JSONObject()
@@ -322,11 +358,38 @@ class GameViewModel @Inject constructor(
                     .put("points", points)
                     .put("suit", suit)
                     .put("player", gameStartResponse.myRole)
+
                 socket.emit("cantar", data)
                 Timber.e("Voy a cantar: $points puntos en $suit, $data")
+
+                palosCantados.add(suit)
                 _canCantar.postValue(false)
             }
         }
+    }
+
+    fun exchangeSeven() {
+        viewModelScope.launch {
+            val token = authRepository.getAuthToken()
+            val gameId = _currentGameId.value
+
+            if (gameId != null) {
+                val data = JSONObject()
+                    .put("token", token)
+                    .put("gameId", gameId)
+
+                socket.emit("exchange_seven", data)
+
+                _hasExchangedSeven.value = true
+            }
+        }
+    }
+
+    fun canExchangeSeven(playerCards: List<Card>, triunfoCard: Card): Boolean {
+        if (_hasExchangedSeven.value == false) {
+            return false
+        }
+        return playerCards.any { it.numero == 7 && it.palo == triunfoCard.palo }
     }
 
     private fun listenForCantarNotification() {
@@ -349,7 +412,6 @@ class GameViewModel @Inject constructor(
             }
         }
     }
-
 
     override fun onCleared() {
         super.onCleared()
