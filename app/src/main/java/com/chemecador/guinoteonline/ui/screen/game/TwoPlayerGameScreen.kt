@@ -45,8 +45,10 @@ fun TwoPlayerGameScreen(
     gameStartResponse: GameStartResponse
 ) {
 
+    val errorMessage by gameViewModel.errorMessage.observeAsState()
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
     val playedCards by gameViewModel.centerCards.observeAsState()
+    val triunfoCard by gameViewModel.triunfoCard.observeAsState(gameStartResponse.triunfoCard)
     val opponentPlayedCards by gameViewModel.opponentPlayedCards.observeAsState()
     val playerCards by gameViewModel.playerCards.observeAsState(emptyList())
     val playerWonCards by gameViewModel.playerWonCards.observeAsState(emptyList())
@@ -55,13 +57,16 @@ fun TwoPlayerGameScreen(
     val team2Points by gameViewModel.team2Points.observeAsState(0)
     val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
     val canCantar by gameViewModel.canCantar.observeAsState(false)
-    val canExchangeSeven = gameViewModel.canExchangeSeven(
-        playerCards,
-        triunfoCard = gameStartResponse.triunfoCard
-    )
+    val canExchangeSeven = gameViewModel.canExchangeSeven()
+
 
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
+    errorMessage?.let {
+        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        gameViewModel.clearError()
+    }
+
 
     Box(
         modifier = Modifier
@@ -160,7 +165,7 @@ fun TwoPlayerGameScreen(
             ShowCenterDeck(
                 modifier = Modifier.align(Alignment.Center),
                 numCardsInDeck = 4,
-                triunfoCard = gameStartResponse.triunfoCard
+                triunfoCard = triunfoCard
             )
         }
         ShowOpponentDeck(
