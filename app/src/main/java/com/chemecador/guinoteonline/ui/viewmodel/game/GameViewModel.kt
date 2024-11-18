@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chemecador.guinoteonline.data.model.Card
 import com.chemecador.guinoteonline.data.model.CardUtils
+import com.chemecador.guinoteonline.data.model.GameResult
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
 import com.chemecador.guinoteonline.data.network.response.Player
 import com.chemecador.guinoteonline.data.repositories.AuthRepository
@@ -30,9 +31,8 @@ class GameViewModel @Inject constructor(
     private val _gameStatus = MutableLiveData<String>()
     val gameStatus: LiveData<String> get() = _gameStatus
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> get() = _errorMessage
-
+    private val _toastMessage = MutableLiveData<String?>()
+    val toastMessage: LiveData<String?> get() = _toastMessage
 
     private val _startGameEvent = MutableLiveData<GameStartResponse>()
     val startGameEvent: LiveData<GameStartResponse> get() = _startGameEvent
@@ -73,14 +73,21 @@ class GameViewModel @Inject constructor(
 
     private val _hasExchangedSeven = MutableLiveData(false)
 
-    private val _isDeckEmpty = MutableLiveData(false)
-    val isDeckEmpty: LiveData<Boolean> get() = _isDeckEmpty
+    private val _deUltimas = MutableLiveData(false)
+    val deUltimas: LiveData<Boolean> get() = _deUltimas
 
     private val _lastWinner = MutableLiveData<String>()
+
+    private val _gameResult = MutableLiveData<GameResult>()
+    val gameResult: LiveData<GameResult> get() = _gameResult
+
+    private val _isGameEnded = MutableLiveData(false)
+    val isGameEnded: LiveData<Boolean> get() = _isGameEnded
 
     private val palosCantados = mutableSetOf<String>()
 
     private lateinit var gameStartResponse: GameStartResponse
+
     private val socket: Socket
 
     init {
@@ -189,9 +196,14 @@ class GameViewModel @Inject constructor(
                 Timber.d("Nueva carta recibida: $newCard")
             }
         }
-        socket.on("deck_empty") {
-            viewModelScope.launch {
-                _isDeckEmpty.postValue(true)
+        socket.on("de_ultimas") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val message = data.getString("message")
+                _centerCards.postValue(null)
+                _opponentPlayedCards.postValue(null)
+                _deUltimas.postValue(true)
+                _toastMessage.postValue(message)
             }
         }
         socket.on("round_winner") { args ->
@@ -302,8 +314,20 @@ class GameViewModel @Inject constructor(
                 val data = args[0] as JSONObject
                 val errorMessage = data.optString("message", "Ha ocurrido un error desconocido")
 
-                _errorMessage.postValue(errorMessage)
+                _toastMessage.postValue(errorMessage)
                 Timber.e("Error recibido del servidor: $errorMessage")
+            }
+        }
+
+        socket.on("game_ended") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val winner = data.getString("winner")
+                val team1Points = data.getInt("team1Points")
+                val team2Points = data.getInt("team2Points")
+
+                _gameResult.postValue(GameResult(winner, team1Points, team2Points))
+                _isGameEnded.postValue(true)
             }
         }
     }
@@ -416,14 +440,15 @@ class GameViewModel @Inject constructor(
         val hasWonLastRound = _lastWinner.value == gameStartResponse.myRole
         val isCurrentTurn = _currentTurn.value == gameStartResponse.myRole
         val playerHand = _playerCards.value ?: return false
-        val hasSevenOfTriunfo = playerHand.any { it.numero == 7 && it.palo == gameStartResponse.triunfoCard.palo }
+        val hasSevenOfTriunfo =
+            playerHand.any { it.numero == 7 && it.palo == gameStartResponse.triunfoCard.palo }
 
         return isCurrentTurn && hasWonLastRound && hasSevenOfTriunfo
     }
 
 
-    fun clearError() {
-        _errorMessage.value = null
+    fun clearMessage() {
+        _toastMessage.value = null
     }
 
     override fun onCleared() {
@@ -435,5 +460,9 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.clearAuthToken()
         }
+    }
+
+    fun clearGameResult() {
+        _isGameEnded.postValue(false)
     }
 }

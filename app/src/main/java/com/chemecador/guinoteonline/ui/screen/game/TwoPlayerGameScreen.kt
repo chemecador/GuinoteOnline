@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -45,7 +47,7 @@ fun TwoPlayerGameScreen(
     gameStartResponse: GameStartResponse
 ) {
 
-    val errorMessage by gameViewModel.errorMessage.observeAsState()
+    val toastMessage by gameViewModel.toastMessage.observeAsState()
     val currentTurn by gameViewModel.currentTurn.observeAsState(gameStartResponse.currentTurn)
     val playedCards by gameViewModel.centerCards.observeAsState()
     val triunfoCard by gameViewModel.triunfoCard.observeAsState(gameStartResponse.triunfoCard)
@@ -55,16 +57,21 @@ fun TwoPlayerGameScreen(
     val opponentWonCards by gameViewModel.opponentWonCards.observeAsState(emptyList())
     val team1Points by gameViewModel.team1Points.observeAsState(0)
     val team2Points by gameViewModel.team2Points.observeAsState(0)
-    val isDeckEmpty by gameViewModel.isDeckEmpty.observeAsState(false)
+    val deUltimas by gameViewModel.deUltimas.observeAsState(false)
     val canCantar by gameViewModel.canCantar.observeAsState(false)
+    val isGameEnded by gameViewModel.isGameEnded.observeAsState(false)
+    val gameResult by gameViewModel.gameResult.observeAsState()
     val canExchangeSeven = gameViewModel.canExchangeSeven()
 
 
     val context = LocalContext.current
     gameViewModel.setGameId(gameStartResponse.gameId)
-    errorMessage?.let {
-        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-        gameViewModel.clearError()
+
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            gameViewModel.clearMessage()
+        }
     }
 
 
@@ -85,7 +92,6 @@ fun TwoPlayerGameScreen(
                 .padding(start = 16.dp, top = 16.dp)
         )
 
-
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -103,6 +109,7 @@ fun TwoPlayerGameScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+
         ShowWonCards(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -144,7 +151,6 @@ fun TwoPlayerGameScreen(
             }
         }
 
-
         if (canCantar) {
             Button(
                 onClick = { gameViewModel.cantar() },
@@ -160,19 +166,18 @@ fun TwoPlayerGameScreen(
             }
         }
 
-
-        if (!isDeckEmpty) {
+        if (!deUltimas){
             ShowCenterDeck(
                 modifier = Modifier.align(Alignment.Center),
                 numCardsInDeck = 4,
                 triunfoCard = triunfoCard
             )
+            ShowOpponentDeck(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp)
+            )
         }
-        ShowOpponentDeck(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
 
         ShowOpponentPlayedCards(
             modifier = Modifier
@@ -183,6 +188,38 @@ fun TwoPlayerGameScreen(
         ShowPlayedCard(
             playedCard = playedCards,
             modifier = Modifier.align(Alignment.Center)
+        )
+    }
+
+    if (isGameEnded && gameResult != null) {
+        val result = gameResult!!
+        val winner = result.winner
+
+        AlertDialog(
+            onDismissRequest = { /* Evitar cerrar el diálogo directamente */ },
+            title = {
+                Text(text = "¡Partida finalizada!")
+            },
+            text = {
+                Column {
+                    Text(text = "Puntos finales:")
+                    Text(text = "Equipo 1: ${result.team1Points} puntos")
+                    Text(text = "Equipo 2: ${result.team2Points} puntos")
+                    Text(
+                        text = if (winner == "Equipo 1" && gameStartResponse.myRole == "player1") "¡Has ganado!"
+                        else if (winner == "Equipo 2" && gameStartResponse.myRole == "player2") "¡Has ganado!"
+                        else "Has perdido."
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    gameViewModel.clearGameResult()
+                    // navigateBackToMenu()
+                }) {
+                    Text("Volver al menú")
+                }
+            }
         )
     }
 }
