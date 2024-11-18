@@ -17,8 +17,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,7 +44,7 @@ fun LoginScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val loginState by viewModel.loginState.observeAsState()
+    val loginState by viewModel.loginState.collectAsState()
     val isButtonEnabled = remember(username, password) {
         username.isNotBlank() && password.isNotBlank()
     }
@@ -112,13 +112,17 @@ fun LoginScreen(
                 }
 
                 is LoginState.Error -> {
-                    Toast.makeText(LocalContext.current, state.message, Toast.LENGTH_SHORT).show()
+                    if (state.message.isNotEmpty()) {
+                        Toast.makeText(LocalContext.current, state.message, Toast.LENGTH_SHORT)
+                            .show()
+                    }
                 }
 
                 is LoginState.Loading -> {
                     CircularProgressIndicator(color = Color.White)
                 }
             }
+            viewModel.clearLoginState()
         }
     }
 }
