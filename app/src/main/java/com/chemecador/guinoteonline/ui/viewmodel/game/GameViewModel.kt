@@ -3,6 +3,7 @@ package com.chemecador.guinoteonline.ui.viewmodel.game
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.chemecador.guinoteonline.data.model.Card
 import com.chemecador.guinoteonline.data.model.CardUtils
@@ -15,6 +16,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -76,6 +80,12 @@ class GameViewModel @Inject constructor(
     private val _deUltimas = MutableLiveData(false)
     val deUltimas: LiveData<Boolean> get() = _deUltimas
 
+    private val _initialCard = MutableLiveData<Card?>(null)
+
+    private val _validCards = MutableLiveData<List<Card>>()
+    val validCards: LiveData<List<Card>> get() = _validCards
+
+
     private val _lastWinner = MutableLiveData<String>()
 
     private val _gameResult = MutableLiveData<GameResult>()
@@ -100,6 +110,20 @@ class GameViewModel @Inject constructor(
 
         socket.connect()
         fetchToken()
+
+        combine(
+            _initialCard.asFlow(),
+            _playerCards.asFlow(),
+            _deUltimas.asFlow()
+        ) { initialCard, hand, deUltimas ->
+            if (initialCard == null || !deUltimas) {
+                hand
+            } else {
+                calculateValidCards(playerHand = hand, triunfoCard = triunfoCard.value)
+            }
+        }.onEach { validCards ->
+            _validCards.postValue(validCards)
+        }.launchIn(viewModelScope)
 
     }
 
@@ -170,6 +194,11 @@ class GameViewModel @Inject constructor(
                 val card = CardUtils.fromString(cardName)
                 val playedBy = jsonData.getString("playedBy")
                 val newTurn = jsonData.getString("currentTurn")
+                val initialCardString = jsonData.optString("initialCard")
+                if (initialCardString.isNotEmpty() && _deUltimas.value == true) {
+                    val initialCard = CardUtils.fromString(initialCardString)
+                    _initialCard.postValue(initialCard)
+                }
 
                 viewModelScope.launch {
                     if (playedBy != gameStartResponse.myRole) {
@@ -196,14 +225,18 @@ class GameViewModel @Inject constructor(
                 Timber.d("Nueva carta recibida: $newCard")
             }
         }
+
         socket.on("de_ultimas") { args ->
             if (args.isNotEmpty()) {
+                Timber.d("de_ultimas: Mensaje recibido: ${args[0]}")
                 val data = args[0] as JSONObject
                 val message = data.getString("message")
                 _centerCards.postValue(null)
                 _opponentPlayedCards.postValue(null)
                 _deUltimas.postValue(true)
                 _toastMessage.postValue(message)
+            } else {
+                Timber.d("Evento de_ultimas emitido sin args")
             }
         }
         socket.on("round_winner") { args ->
@@ -215,13 +248,13 @@ class GameViewModel @Inject constructor(
                 val team2Points = data.getInt("team2Points")
                 val nextTurn = data.getString("nextTurn")
 
-                val playedCard = _centerCards.value
-                val opponentPlayedCard = _opponentPlayedCards.value
-
-                _lastWinner.postValue(winner)
-                _isInteractionEnabled.postValue(false)
-
                 viewModelScope.launch {
+                    val playedCard = _centerCards.value
+                    val opponentPlayedCard = _opponentPlayedCards.value
+
+                    _lastWinner.postValue(winner)
+                    _isInteractionEnabled.postValue(false)
+
                     _team1Points.postValue(team1Points)
                     _team2Points.postValue(team2Points)
                     delay(1750) // Give the user some time to see the cards played
@@ -245,7 +278,9 @@ class GameViewModel @Inject constructor(
                         _opponentWonCards.postValue(updatedOpponentWonCards)
                     }
 
-                    Timber.d("Cartas jugadas limpiadas y asignadas correctamente al ganador")
+                    if (_deUltimas.value == true) {
+                        _initialCard.postValue(null)
+                    }
                     _isInteractionEnabled.postValue(true)
                 }
 
@@ -345,6 +380,9 @@ class GameViewModel @Inject constructor(
 
         viewModelScope.launch {
 
+            if (_deUltimas.value == true && _initialCard.value == null) {
+                _initialCard.postValue(card)
+            }
             val updatedCards = _playerCards.value?.toMutableList() ?: mutableListOf()
             updatedCards.remove(card)
             _playerCards.value = updatedCards
@@ -446,6 +484,38 @@ class GameViewModel @Inject constructor(
         return isCurrentTurn && hasWonLastRound && hasSevenOfTriunfo
     }
 
+    private fun calculateValidCards(playerHand: List<Card>, triunfoCard: Card?): List<Card> {
+
+        val validCards = mutableListOf<Card>()
+        if (triunfoCard == null)
+            return playerHand
+        if (_deUltimas.value != true) {
+            // Si no vamos de últimas , puedes tirar la que quieras
+            _validCards.postValue(playerHand)
+            return playerHand
+        }
+
+        if (_initialCard.value == null) {
+            // Si es el primer jugador, todas las cartas son válidas
+            return playerHand
+        }
+
+        val initialCard = _initialCard.value!!
+        val initialSuit = initialCard.palo
+        val higherCards =
+            playerHand.filter { it.palo == initialSuit && it.numero > initialCard.numero }
+        val sameSuitCards = playerHand.filter { it.palo == initialSuit }
+        val triunfoCards = playerHand.filter { it.palo == triunfoCard.palo }
+
+        when {
+            higherCards.isNotEmpty() -> validCards.addAll(higherCards) // Matar
+            sameSuitCards.isNotEmpty() -> validCards.addAll(sameSuitCards) // Seguir palo
+            triunfoCards.isNotEmpty() -> validCards.addAll(triunfoCards) // Tirar triunfo
+            else -> validCards.addAll(playerHand) // Tirar cualquier carta
+        }
+
+        return validCards
+    }
 
     fun clearMessage() {
         _toastMessage.value = null

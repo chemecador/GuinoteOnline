@@ -131,11 +131,20 @@ fun TwoPlayerGameScreen(
             playerCards = playerCards,
             triunfoCard = gameStartResponse.triunfoCard,
             onCardPlayed = { cardPlayed ->
-                if (currentTurn == gameStartResponse.myRole) {
-                    gameViewModel.playCard(cardPlayed)
-                } else {
+                if (currentTurn != gameStartResponse.myRole) {
                     Toast.makeText(context, "No es tu turno", Toast.LENGTH_SHORT).show()
+                    return@showPlayerCards
                 }
+
+                if (deUltimas) {
+                    val validCards = gameViewModel.validCards.value.orEmpty()
+                    if (cardPlayed !in validCards) {
+                        Toast.makeText(context, "Esta carta no es válida", Toast.LENGTH_SHORT).show()
+                        return@showPlayerCards
+                    }
+                }
+
+                gameViewModel.playCard(cardPlayed)
             }
         )
 
@@ -166,7 +175,7 @@ fun TwoPlayerGameScreen(
             }
         }
 
-        if (!deUltimas){
+        if (!deUltimas) {
             ShowCenterDeck(
                 modifier = Modifier.align(Alignment.Center),
                 numCardsInDeck = 4,
@@ -206,8 +215,9 @@ fun TwoPlayerGameScreen(
                     Text(text = "Equipo 1: ${result.team1Points} puntos")
                     Text(text = "Equipo 2: ${result.team2Points} puntos")
                     Text(
-                        text = if (winner == "Equipo 1" && gameStartResponse.myRole == "player1") "¡Has ganado!"
-                        else if (winner == "Equipo 2" && gameStartResponse.myRole == "player2") "¡Has ganado!"
+                        text = if (winner == "Equipo 1" && gameStartResponse.myRole == "player1"
+                            || winner == "Equipo 2" && gameStartResponse.myRole == "player2"
+                        ) "¡Has ganado!"
                         else "Has perdido."
                     )
                 }
