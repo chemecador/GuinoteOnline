@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.data.network.response.GameStartResponse
-import com.chemecador.guinoteonline.ui.screen.auth.login.LoginScreen
-import com.chemecador.guinoteonline.ui.screen.auth.register.RegisterScreen
+import com.chemecador.guinoteonline.ui.screen.auth.LoginScreen
+import com.chemecador.guinoteonline.ui.screen.auth.RegisterScreen
 import com.chemecador.guinoteonline.ui.screen.game.SearchGameScreen
 import com.chemecador.guinoteonline.ui.screen.game.TwoPlayerGameScreen
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor

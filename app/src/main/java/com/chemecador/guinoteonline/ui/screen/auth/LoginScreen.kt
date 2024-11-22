@@ -1,4 +1,4 @@
-package com.chemecador.guinoteonline.ui.screen.auth.login
+package com.chemecador.guinoteonline.ui.screen.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -30,8 +30,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.R
-import com.chemecador.guinoteonline.ui.screen.auth.register.PasswordTextField
-import com.chemecador.guinoteonline.ui.screen.auth.register.UsernameTextField
+import com.chemecador.guinoteonline.ui.components.PasswordTextField
+import com.chemecador.guinoteonline.ui.components.UsernameTextField
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.viewmodel.auth.login.LoginState
 import com.chemecador.guinoteonline.ui.viewmodel.auth.login.LoginViewModel

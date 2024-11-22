@@ -1,4 +1,4 @@
-package com.chemecador.guinoteonline.ui.screen.auth.register
+package com.chemecador.guinoteonline.ui.screen.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -14,11 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,18 +24,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.chemecador.guinoteonline.R
+import com.chemecador.guinoteonline.ui.components.EmailTextField
+import com.chemecador.guinoteonline.ui.components.PasswordTextField
+import com.chemecador.guinoteonline.ui.components.UsernameTextField
 import com.chemecador.guinoteonline.ui.theme.BackgroundColor
 import com.chemecador.guinoteonline.ui.viewmodel.auth.register.RegisterState
 import com.chemecador.guinoteonline.ui.viewmodel.auth.register.RegisterViewModel
+
 
 @Composable
 fun RegisterScreen(
@@ -175,118 +172,3 @@ fun RegisterScreen(
     }
 }
 
-
-@Composable
-fun UsernameTextField(username: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = username,
-        onValueChange = onValueChange,
-        label = { Text("Username") },
-        modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color.White,
-            unfocusedBorderColor = Color.Gray,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color.White,
-            focusedLabelColor = Color.White,
-            unfocusedLabelColor = Color.Gray
-        )
-    )
-}
-
-@Composable
-fun EmailTextField(
-    email: String,
-    onValueChange: (String) -> Unit,
-    emailError: Boolean,
-    onFocusChange: (Boolean) -> Unit
-) {
-    var isFocused by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = email,
-        onValueChange = onValueChange,
-        label = { Text("Email") },
-        isError = emailError,
-        singleLine = true,
-        modifier = Modifier
-            .fillMaxWidth()
-            .onFocusChanged { focusState ->
-                isFocused = focusState.isFocused
-                if (!focusState.isFocused) {
-                    onFocusChange(false)
-                }
-            },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = if (emailError) Color.Red else Color.White,
-            unfocusedBorderColor = if (emailError) Color.Red else Color.Gray,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color.White,
-            focusedLabelColor = if (emailError) Color.Red else Color.White,
-            unfocusedLabelColor = if (emailError) Color.Red else Color.Gray
-        ),
-        supportingText = {
-            if (emailError) {
-                Text(text = "Email no válido", color = Color.Red)
-            }
-        }
-    )
-}
-
-@Composable
-fun PasswordTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onFocusChange: (Boolean) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false,
-    supportingText: @Composable (() -> Unit)? = null
-) {
-    var passwordVisible by remember { mutableStateOf(false) }
-    var isFocused by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = value,
-        singleLine = true,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        modifier = modifier.onFocusChanged { focusState ->
-            isFocused = focusState.isFocused
-            if (!focusState.isFocused) {
-                onFocusChange(false)
-            }
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = if (isError) Color.Red else Color.White,
-            unfocusedBorderColor = if (isError) Color.Red else Color.Gray,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White,
-            cursorColor = Color.White,
-            focusedLabelColor = if (isError) Color.Red else Color.White,
-            unfocusedLabelColor = if (isError) Color.Red else Color.Gray,
-        ),
-        trailingIcon = {
-            val image = if (passwordVisible) {
-                painterResource(id = R.drawable.ic_visibility_on)
-            } else {
-                painterResource(id = R.drawable.ic_visibility_off)
-            }
-
-            IconButton(onClick = {
-                passwordVisible = !passwordVisible
-            }) {
-                Icon(
-                    painter = image,
-                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                )
-            }
-        },
-        isError = isError,
-        supportingText = supportingText
-    )
-}
